@@ -1,8 +1,8 @@
 // src/app/(store)/contact/page.tsx
 import { Metadata } from 'next'
+import { ContactForm } from '@/components/shared/contact-form'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { getStoreSettings } from '@/lib/settings'
 import { Mail, Phone, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -10,7 +10,12 @@ export const metadata: Metadata = {
   description: 'Get in touch with our customer support team',
 }
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await getStoreSettings()
+  const storeEmail = settings?.storeEmail || 'support@eshop.com'
+  const storePhone = settings?.storePhone || '+1 (555) 123-4567'
+  const storeAddress = settings?.storeAddress || '123 Commerce Street, New York, NY 10001'
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -28,7 +33,9 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="font-semibold mb-1">Email</h3>
-              <p className="text-muted-foreground">support@eshop.com</p>
+              <a href={`mailto:${storeEmail}`} className="text-muted-foreground hover:text-foreground transition-colors">
+                {storeEmail}
+              </a>
               <p className="text-sm text-muted-foreground">We respond within 24 hours</p>
             </div>
           </div>
@@ -40,7 +47,9 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="font-semibold mb-1">Phone</h3>
-              <p className="text-muted-foreground">+1 (555) 123-4567</p>
+              <a href={`tel:${storePhone}`} className="text-muted-foreground hover:text-foreground transition-colors">
+                {storePhone}
+              </a>
               <p className="text-sm text-muted-foreground">Mon-Fri 9am-6pm EST</p>
             </div>
           </div>
@@ -52,10 +61,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="font-semibold mb-1">Address</h3>
-              <p className="text-muted-foreground">
-                123 Commerce Street<br />
-                New York, NY 10001
-              </p>
+              <p className="text-muted-foreground whitespace-pre-line">{storeAddress}</p>
             </div>
           </div>
         </div>
@@ -64,52 +70,7 @@ export default function ContactPage() {
           {/* Contact Form */}
           <div>
             <h2 className="text-2xl font-semibold mb-4">Send us a message</h2>
-            <form className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium mb-2">
-                    First Name *
-                  </label>
-                  <Input id="firstName" placeholder="John" required />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium mb-2">
-                    Last Name *
-                  </label>
-                  <Input id="lastName" placeholder="Doe" required />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2">
-                  Email *
-                </label>
-                <Input id="email" type="email" placeholder="john@example.com" required />
-              </div>
-
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium mb-2">
-                  Subject *
-                </label>
-                <Input id="subject" placeholder="What is this about?" required />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium mb-2">
-                  Message *
-                </label>
-                <Textarea
-                  id="message"
-                  placeholder="Tell us how we can help..."
-                  rows={6}
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full">
-                Send Message
-              </Button>
-            </form>
+            <ContactForm />
           </div>
 
           {/* FAQ Teaser */}

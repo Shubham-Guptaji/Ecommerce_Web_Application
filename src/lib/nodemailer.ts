@@ -28,7 +28,10 @@ if (env.NODE_ENV !== 'production') {
 export async function sendEmail(
   to: string,
   subject: string,
-  html: string
+  html: string,
+  options?: {
+    replyTo?: string
+  }
 ): Promise<void> {
   await transporter.sendMail({
     from: {
@@ -36,6 +39,7 @@ export async function sendEmail(
       address: env.SMTP_FROM,
     },
     to,
+    replyTo: options?.replyTo,
     subject,
     html,
   })

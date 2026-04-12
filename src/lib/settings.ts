@@ -4,6 +4,10 @@ import Setting from '@/models/Setting'
 
 type StoreSettings = {
   maintenanceMode?: boolean
+  storeName?: string
+  storeEmail?: string
+  storePhone?: string
+  storeAddress?: string
 }
 
 export async function getStoreSettings() {

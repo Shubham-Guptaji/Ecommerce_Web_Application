@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
@@ -11,8 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Star,
 } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
-import DOMPurify from 'dompurify'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface ProductReviewsClientProps {
   product: any
@@ -51,28 +50,7 @@ export function ProductReviewsClient({ product, reviews: initialReviews, hasPurc
           <div className="prose dark:prose-invert max-w-none">
             <div
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(product.description, {
-                  ALLOWED_TAGS: [
-                    'p',
-                    'br',
-                    'strong',
-                    'em',
-                    'b',
-                    'i',
-                    'ul',
-                    'ol',
-                    'li',
-                    'a',
-                    'h1',
-                    'h2',
-                    'h3',
-                    'h4',
-                    'h5',
-                    'h6',
-                    'img',
-                  ],
-                  ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target'],
-                }),
+                __html: sanitizeHtml(product.description || ''),
               }}
             />
           </div>

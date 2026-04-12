@@ -22,6 +22,14 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
 })
 
+export const contactSchema = z.object({
+  firstName: z.string().trim().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().trim().min(2, 'Last name must be at least 2 characters'),
+  email: z.string().trim().email('Invalid email address'),
+  subject: z.string().trim().min(3, 'Subject must be at least 3 characters').max(120, 'Subject is too long'),
+  message: z.string().trim().min(10, 'Message must be at least 10 characters').max(2000, 'Message is too long'),
+})
+
 export const resetPasswordSchema = z.object({
   token: z.string(),
   password: z.string(),
