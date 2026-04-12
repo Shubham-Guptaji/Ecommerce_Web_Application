@@ -169,7 +169,7 @@ export default async function ProductsPage({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col gap-8 md:flex-row">
         {/* Mobile Filter Button */}
         <div className="md:hidden mb-4">
           <Sheet>
@@ -183,7 +183,7 @@ export default async function ProductsPage({
               <SlidersHorizontal className="mr-2 h-4 w-4" />
               Filters
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
+            <SheetContent side="bottom" className="h-[80vh] w-full max-w-none overflow-y-auto px-4 sm:px-6">
               <div className="py-4">
                 <h3 className="font-semibold mb-4">Filters</h3>
                 <ProductFilters categories={categoryTree} />
@@ -193,16 +193,16 @@ export default async function ProductsPage({
         </div>
 
         {/* Sidebar */}
-        <aside className="hidden md:block w-64 shrink-0">
+        <aside className="hidden w-64 shrink-0 md:block">
           <div className="sticky top-24">
             <ProductFilters categories={categoryTree} />
           </div>
         </aside>
 
         {/* Product Grid */}
-        <main className="flex-1">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">All Products</h1>
+        <main className="min-w-0 flex-1">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl font-bold sm:text-3xl">All Products</h1>
             <div className="flex items-center gap-4">
               <SortDropdown />
             </div>
@@ -227,7 +227,7 @@ export default async function ProductsPage({
           )}
 
           {pagination.pages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
               {Array.from({ length: pagination.pages }).map((_, i) => (
                 <Link
                   key={i}

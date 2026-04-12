@@ -34,6 +34,8 @@ export function ProductActions({ product }: ProductActionsProps) {
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated)
 
   const { addItem, openCart } = useCartStore()
+  const maxOrderQuantity = Math.min(10, Math.max(product.stock, 0))
+  const isOutOfStock = product.stock <= 0
 
   // Check if product is in wishlist
   useEffect(() => {
@@ -42,6 +44,15 @@ export function ProductActions({ product }: ProductActionsProps) {
     )
     setIsInWishlist(inWishlist)
   }, [wishlistItems, product._id])
+
+  useEffect(() => {
+    if (maxOrderQuantity <= 0) {
+      setQuantity(1)
+      return
+    }
+
+    setQuantity((current) => Math.min(Math.max(1, current), maxOrderQuantity))
+  }, [maxOrderQuantity])
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -53,10 +64,19 @@ export function ProductActions({ product }: ProductActionsProps) {
       return
     }
 
-    if (product.stock < quantity) {
+    if (isOutOfStock) {
+      toast({
+        title: 'Out of stock',
+        description: 'This product is currently unavailable.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (quantity > maxOrderQuantity) {
       toast({
         title: 'Error',
-        description: `Only ${product.stock} items available in stock`,
+        description: `You can add up to ${maxOrderQuantity} item${maxOrderQuantity === 1 ? '' : 's'} for this product.`,
         variant: 'destructive',
       })
       return
@@ -90,10 +110,19 @@ export function ProductActions({ product }: ProductActionsProps) {
       return
     }
 
-    if (product.stock < quantity) {
+    if (isOutOfStock) {
+      toast({
+        title: 'Out of stock',
+        description: 'This product is currently unavailable.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (quantity > maxOrderQuantity) {
       toast({
         title: 'Error',
-        description: `Only ${product.stock} items available in stock`,
+        description: `You can purchase up to ${maxOrderQuantity} item${maxOrderQuantity === 1 ? '' : 's'} for this product.`,
         variant: 'destructive',
       })
       return
@@ -182,42 +211,50 @@ export function ProductActions({ product }: ProductActionsProps) {
               type="button"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               className="px-3 py-2 hover:bg-muted transition-colors"
-              disabled={quantity <= 1}
+              disabled={quantity <= 1 || isOutOfStock}
             >
               <Minus className="h-4 w-4" />
             </button>
             <input
               type="number"
               min="1"
-              max={product.stock}
+              max={Math.max(1, maxOrderQuantity)}
               value={quantity}
               onChange={(e) => {
                 const val = parseInt(e.target.value) || 1
-                setQuantity(Math.min(product.stock, Math.max(1, val)))
+                setQuantity(Math.min(Math.max(1, val), Math.max(1, maxOrderQuantity)))
               }}
+              disabled={isOutOfStock}
               className="w-16 text-center border-x py-2 focus:outline-none"
             />
             <button
               type="button"
-              onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+              onClick={() => setQuantity((q) => Math.min(maxOrderQuantity, q + 1))}
               className="px-3 py-2 hover:bg-muted transition-colors"
-              disabled={quantity >= product.stock}
+              disabled={isOutOfStock || quantity >= maxOrderQuantity}
             >
               <Plus className="h-4 w-4" />
             </button>
           </div>
           <span className="text-sm text-muted-foreground">
-            Max {product.stock} per order
+            {isOutOfStock
+              ? 'Currently out of stock'
+              : `Max ${maxOrderQuantity} per order`}
           </span>
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <Button size="lg" className="flex-1 gap-2" onClick={handleAddToCart}>
+      <div className="flex flex-wrap gap-3">
+        <Button
+          size="lg"
+          className="min-w-0 flex-1 gap-2 sm:min-w-[180px]"
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+        >
           <ShoppingCart className="h-5 w-5" />
           Add to Cart
         </Button>
-        <Button size="lg" variant="outline" onClick={handleBuyNow}>
+        <Button size="lg" variant="outline" onClick={handleBuyNow} disabled={isOutOfStock}>
           Buy Now
         </Button>
         <Button

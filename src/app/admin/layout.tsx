@@ -3,7 +3,7 @@
 
 import { useSession } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -67,7 +67,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen overflow-x-hidden bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -169,9 +169,9 @@ export default function AdminLayout({
       <div className="lg:pl-64">
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b">
-          <div className="px-6 py-4">
+          <div className="px-4 py-3 sm:px-6 sm:py-4">
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+            <nav className="mb-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Link href="/admin" className="hover:text-primary transition-colors">
                 Dashboard
               </Link>
@@ -185,8 +185,8 @@ export default function AdminLayout({
               )}
             </nav>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-4">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -197,7 +197,7 @@ export default function AdminLayout({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </Button>
-                <h1 className="text-xl font-bold">
+                <h1 className="truncate text-lg font-bold sm:text-xl">
                   {navigation.find((n) => n.href === pathname)?.name || 'Admin'}
                 </h1>
               </div>
@@ -224,7 +224,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="p-4 sm:p-6">
           {children}
         </main>
       </div>

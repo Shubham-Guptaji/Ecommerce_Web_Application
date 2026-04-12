@@ -140,9 +140,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 sm:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
         {/* Revenue Chart */}
         <Card>
           <CardHeader>
@@ -274,7 +274,10 @@ export default function AdminDashboard() {
             {overviewData?.data?.lowStockProducts && overviewData.data.lowStockProducts.length > 0 ? (
               <div className="space-y-4">
                 {overviewData.data.lowStockProducts.map((product: any) => (
-                  <div key={product._id} className="flex items-center gap-4 border-b pb-4 last:border-0">
+                  <div
+                    key={product._id}
+                    className="flex flex-col gap-3 border-b pb-4 last:border-0 sm:flex-row sm:items-center sm:gap-4"
+                  >
                     <div className="h-12 w-12 rounded-md overflow-hidden bg-muted">
                       {product.images?.[0]?.url ? (
                         <Image
@@ -294,7 +297,7 @@ export default function AdminDashboard() {
                       <p className="font-medium">{product.name}</p>
                       <p className="text-sm text-muted-foreground">{product.sku}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <p className={`font-semibold ${product.stock < 5 ? 'text-red-600' : 'text-orange-600'}`}>
                         {product.stock} left
                       </p>
@@ -302,6 +305,7 @@ export default function AdminDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="w-full sm:w-auto"
                       onClick={() => window.open(`/admin/products/${product._id}/edit`, '_blank')}
                     >
                       Edit Stock
@@ -333,7 +337,7 @@ export default function AdminDashboard() {
             </div>
           ) : recentOrdersData?.success && recentOrdersData.data.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 text-sm font-medium">Order #</th>

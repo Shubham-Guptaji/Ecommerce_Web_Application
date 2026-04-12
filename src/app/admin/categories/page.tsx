@@ -286,7 +286,7 @@ export default function AdminCategoriesPage() {
     return nodes.map((node) => (
       <div key={node._id}>
         <div
-          className={`flex items-center gap-3 py-2 px-3 hover:bg-muted/50 cursor-pointer ${
+          className={`flex flex-wrap items-start gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer sm:flex-nowrap sm:items-center ${
             selectedCategoryId === node._id ? 'bg-muted' : ''
           }`}
           style={{ paddingLeft: `${level * 20 + 12}px` }}
@@ -299,7 +299,7 @@ export default function AdminCategoriesPage() {
               alt={node.name}
               width={32}
               height={32}
-              className="rounded object-cover"
+              className="h-8 w-8 rounded object-cover"
             />
           ) : (
             <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
@@ -314,36 +314,38 @@ export default function AdminCategoriesPage() {
           </div>
 
           {/* Active toggle */}
-          <Switch
-            checked={node.isActive}
-            onCheckedChange={(checked) => handleActiveToggle(node._id, checked)}
-            disabled={pendingActiveToggle?.id === node._id}
-            className="scale-75"
-          />
+          <div className="ml-auto flex items-center gap-1">
+            <Switch
+              checked={node.isActive}
+              onCheckedChange={(checked) => handleActiveToggle(node._id, checked)}
+              disabled={pendingActiveToggle?.id === node._id}
+              className="scale-75"
+            />
 
-          {/* Actions */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleSelectCategory(node._id)
-            }}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-red-600"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleDelete(node._id)
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            {/* Actions */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSelectCategory(node._id)
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-600"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDelete(node._id)
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         {node.children && node.children.length > 0 && renderTree(node.children, level + 1)}
       </div>
@@ -351,9 +353,9 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-12rem)]">
+    <div className="flex flex-col gap-6 xl:h-[calc(100vh-12rem)] xl:flex-row">
       {/* Left Panel: Category Tree */}
-      <Card className="w-80 flex-shrink-0 overflow-hidden">
+      <Card className="w-full overflow-hidden xl:w-80 xl:flex-shrink-0">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">Categories</h2>
@@ -373,7 +375,7 @@ export default function AdminCategoriesPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : (
-            <div className="overflow-y-auto max-h-[calc(100vh-16rem)]">
+            <div className="max-h-[50vh] overflow-y-auto xl:max-h-[calc(100vh-16rem)]">
               {tree.length > 0 ? (
                 renderTree(tree)
               ) : (
@@ -388,7 +390,7 @@ export default function AdminCategoriesPage() {
       </Card>
 
       {/* Right Panel: Add/Edit Form */}
-      <Card className="flex-1 overflow-y-auto">
+      <Card className="w-full xl:flex-1 xl:overflow-y-auto">
         <CardContent className="p-6">
           <div className="mb-6">
             <h2 className="text-2xl font-bold">
@@ -513,7 +515,7 @@ export default function AdminCategoriesPage() {
               {/* Image Upload */}
               <div className="space-y-2">
                 <FormLabel>Category Image</FormLabel>
-                <div className="flex items-start gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                   {form.getValues('imageUrl') ? (
                     <div className="relative h-24 w-24 rounded-md overflow-hidden border">
                       <Image
@@ -557,7 +559,7 @@ export default function AdminCategoriesPage() {
               </div>
 
               {/* Submit */}
-              <div className="flex items-center justify-end gap-4 pt-4 border-t">
+              <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"

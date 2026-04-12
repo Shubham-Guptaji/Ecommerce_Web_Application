@@ -621,7 +621,7 @@ export default function AdminNewsletterPage() {
               </SelectContent>
             </Select>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Input
                 type="date"
                 value={dateFrom}
@@ -640,7 +640,7 @@ export default function AdminNewsletterPage() {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Select
                 value={sortBy}
                 onValueChange={(value) => {
@@ -685,17 +685,17 @@ export default function AdminNewsletterPage() {
           )}
 
           {selectedCount > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg bg-muted p-3">
+            <div className="mt-4 flex flex-col gap-3 rounded-lg bg-muted p-3 sm:flex-row sm:flex-wrap sm:items-center">
               <span className="text-sm font-medium">
                 {selectedCount} subscriber{selectedCount === 1 ? '' : 's'} selected
               </span>
-              <Button size="sm" onClick={openSendToSelected}>
+              <Button size="sm" onClick={openSendToSelected} className="w-full sm:w-auto">
                 <Mail className="mr-2 h-4 w-4" />
                 Send to Selected
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm">Bulk Actions</Button>
+                  <Button size="sm" className="w-full sm:w-auto">Bulk Actions</Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem onClick={() => handleBulkAction('activate')}>
@@ -838,11 +838,11 @@ export default function AdminNewsletterPage() {
                 </Table>
               </div>
 
-              <div className="mt-6 flex items-center justify-between">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-muted-foreground">
                   Page {pageIndex + 1} of {totalPages}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -866,7 +866,7 @@ export default function AdminNewsletterPage() {
                       setPageIndex(0)
                     }}
                   >
-                    <SelectTrigger className="w-[110px]">
+                    <SelectTrigger className="w-full min-w-[110px] sm:w-[110px]">
                       <SelectValue placeholder="Rows" />
                     </SelectTrigger>
                     <SelectContent>

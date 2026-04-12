@@ -257,18 +257,19 @@ export default function AdminUserDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Button variant="outline" asChild>
           <Link href="/admin/users">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Users
           </Link>
         </Button>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap lg:w-auto lg:justify-end">
           <Button
             variant="outline"
             onClick={() => handleRoleChange(user.role === 'admin' ? 'user' : 'admin')}
             disabled={updating}
+            className="w-full sm:w-auto"
           >
             <UserCheck className="mr-2 h-4 w-4" />
             {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
@@ -277,6 +278,7 @@ export default function AdminUserDetailPage() {
             variant={user.isActive ? 'destructive' : 'default'}
             onClick={() => handleStatusChange(!user.isActive)}
             disabled={updating}
+            className="w-full sm:w-auto"
           >
             {user.isActive ? (
               <>
@@ -290,7 +292,12 @@ export default function AdminUserDetailPage() {
               </>
             )}
           </Button>
-          <Button variant="destructive" onClick={handleDeleteUser} disabled={updating || isCurrentAdmin}>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteUser}
+            disabled={updating || isCurrentAdmin}
+            className="w-full sm:w-auto"
+          >
             <Trash2 className="mr-2 h-4 w-4" />
             {isCurrentAdmin ? 'Cannot Delete Yourself' : 'Delete'}
           </Button>

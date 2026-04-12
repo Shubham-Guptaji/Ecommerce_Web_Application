@@ -114,7 +114,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
     inStock
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6 overflow-x-hidden">
       {/* Categories */}
       <div>
         <h3 className="font-semibold mb-3">Categories</h3>
@@ -142,13 +142,13 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
             step={1000}
             onValueChange={handlePriceChange}
           />
-          <div className="flex items-center gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
             <input
               type="number"
               placeholder="Min"
               value={priceRange[0] || ''}
               onChange={(e) => handlePriceInputChange('min', parseInt(e.target.value) || 0)}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="min-w-0 w-full border rounded px-3 py-2 text-sm"
             />
             <span className="text-muted-foreground">-</span>
             <input
@@ -156,7 +156,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
               placeholder="Max"
               value={priceRange[1] || ''}
               onChange={(e) => handlePriceInputChange('max', parseInt(e.target.value) || 100000)}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="min-w-0 w-full border rounded px-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -221,14 +221,14 @@ function CategoryNode({
   const isChecked = selected.includes(node.slug)
 
   return (
-    <div key={node._id}>
+      <div key={node._id} className="min-w-0">
       <div className="flex items-center space-x-2" style={{ paddingLeft: `${level * 12}px` }}>
         <Checkbox
           id={`cat-${node._id}`}
           checked={isChecked}
           onCheckedChange={(checked) => onChange(node.slug, checked as boolean)}
         />
-        <Label htmlFor={`cat-${node._id}`} className="text-sm cursor-pointer">
+        <Label htmlFor={`cat-${node._id}`} className="cursor-pointer break-words text-sm">
           {node.name}
         </Label>
       </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import Order from '@/models/Order'
+import '@/models/Address'
 import { requireAdmin } from '@/lib/adminAuth'
 
 export async function GET(
