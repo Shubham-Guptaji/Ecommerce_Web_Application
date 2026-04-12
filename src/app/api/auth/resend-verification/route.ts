@@ -4,6 +4,7 @@ import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import EmailVerification from '@/models/EmailVerification'
 import { sendVerificationEmail } from '@/lib/emails'
+import { checkRateLimit, getClientIp, resendVerificationRateLimiter } from '@/lib/ratelimit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +20,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const clientIp = getClientIp(request)
+    const normalizedEmail = email.toLowerCase().trim()
+    const { limited } = await checkRateLimit(
+      resendVerificationRateLimiter,
+      `${clientIp}:${normalizedEmail}:resend-verification`
+    )
+
+    if (limited) {
+      return NextResponse.json(
+        { success: false, message: 'Too many verification attempts. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() })
+    const user = await User.findOne({ email: normalizedEmail })
 
     if (!user) {
       // Don't reveal that user doesn't exist
@@ -36,19 +51,6 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Email is already verified.',
       })
-    }
-
-    // Rate limiting: check attempts in last hour
-    const attempts = await EmailVerification.find({
-      user: user._id,
-      createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) },
-    })
-
-    if (attempts.length >= 3) {
-      return NextResponse.json(
-        { success: false, message: 'Too many verification attempts. Please try again later.' },
-        { status: 429 }
-      )
     }
 
     // Delete any existing verification records for this user

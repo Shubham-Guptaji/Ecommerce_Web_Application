@@ -1,10 +1,20 @@
 // File path: src/lib/auth.ts
 import NextAuth from 'next-auth'
+import { CredentialsSignin } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import { compare } from 'bcryptjs'
 import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
+import { checkRateLimit, getClientIp, loginRateLimiter } from '@/lib/ratelimit'
+
+class RateLimitSignInError extends CredentialsSignin {
+  code = 'rate_limit'
+}
+
+class UnverifiedEmailSignInError extends CredentialsSignin {
+  code = 'unverified'
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -17,14 +27,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      authorize: async (credentials) => {
+      authorize: async (credentials, request) => {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
 
+        const clientIp = getClientIp(request)
+        const email = String(credentials.email).trim().toLowerCase()
+        const rateLimitKey = `${clientIp}:${email}`
+        const { limited } = await checkRateLimit(loginRateLimiter, rateLimitKey)
+
+        if (limited) {
+          throw new RateLimitSignInError()
+        }
+
         await dbConnect()
 
-        const user = await User.findOne({ email: credentials.email }).select('+password')
+        const user = await User.findOne({ email }).select('+password')
         if (!user) {
           return null
         }
@@ -44,7 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Reject if email is not verified
         if (!user.isEmailVerified) {
-          return null
+          throw new UnverifiedEmailSignInError()
         }
 
         return {

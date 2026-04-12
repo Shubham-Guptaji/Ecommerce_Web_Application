@@ -1,6 +1,6 @@
 // src/app/(store)/products/page.tsx
 import { Metadata } from 'next'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { SlidersHorizontal } from 'lucide-react'
 import { toPlainObject } from '@/lib/utils'
@@ -144,11 +144,15 @@ export default async function ProductsPage({
         {/* Mobile Filter Button */}
         <div className="md:hidden mb-4">
           <Sheet>
-            <SheetTrigger asChild>
-              <Button type="button" variant="outline" className="w-full">
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Filters
-              </Button>
+            <SheetTrigger
+              type="button"
+              className={buttonVariants({
+                variant: 'outline',
+                className: 'w-full',
+              })}
+            >
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              Filters
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
               <div className="py-4">

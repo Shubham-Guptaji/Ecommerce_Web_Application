@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import { forgotPasswordSchema } from '@/schemas'
-import { forgotPasswordRateLimiter, getClientIp } from '@/lib/ratelimit'
+import { checkRateLimit, forgotPasswordRateLimiter, getClientIp } from '@/lib/ratelimit'
 import { sendPasswordResetEmail } from '@/lib/emails'
 
 export async function POST(request: NextRequest) {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting
     const clientIp = getClientIp(request)
-    const limited = forgotPasswordRateLimiter.isLimited(clientIp)
+    const { limited } = await checkRateLimit(forgotPasswordRateLimiter, clientIp)
     if (limited) {
       return NextResponse.json(
         { success: false, message: 'Too many reset attempts. Please try again later.' },

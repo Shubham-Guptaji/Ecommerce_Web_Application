@@ -3,9 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import EmailVerification from '@/models/EmailVerification'
-import { v4 as uuidv4 } from 'uuid'
 import { registerSchema } from '@/schemas'
-import { registerRateLimiter, getClientIp } from '@/lib/ratelimit'
+import { checkRateLimit, registerRateLimiter, getClientIp } from '@/lib/ratelimit'
 import { sendVerificationEmail } from '@/lib/emails'
 
 export async function POST(request: NextRequest) {
@@ -14,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting
     const clientIp = getClientIp(request)
-    const limited = registerRateLimiter.isLimited(clientIp)
+    const { limited } = await checkRateLimit(registerRateLimiter, clientIp)
     if (limited) {
       return NextResponse.json(
         { success: false, message: 'Too many registration attempts. Please try again later.' },
@@ -82,4 +81,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

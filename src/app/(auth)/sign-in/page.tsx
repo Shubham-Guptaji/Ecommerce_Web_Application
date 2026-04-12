@@ -53,16 +53,22 @@ export default function SignInPage() {
       })
 
       if (result?.error) {
-        if (result.error === 'CredentialsSignin') {
+        if (result.code === 'rate_limit') {
           toast({
-            title: 'Error',
-            description: 'Invalid email or password',
+            title: 'Too many attempts',
+            description: 'Please wait before trying to sign in again.',
             variant: 'destructive',
           })
-        } else if (result.error === 'unverified') {
+        } else if (result.code === 'unverified') {
           toast({
             title: 'Email not verified',
             description: 'Please verify your email before logging in.',
+            variant: 'destructive',
+          })
+        } else if (result.error === 'CredentialsSignin') {
+          toast({
+            title: 'Error',
+            description: 'Invalid email or password',
             variant: 'destructive',
           })
         } else {

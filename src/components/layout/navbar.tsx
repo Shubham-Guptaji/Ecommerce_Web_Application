@@ -3,6 +3,7 @@
 
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   ShoppingBag,
@@ -32,6 +33,7 @@ import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 
 export function Navbar() {
+  const router = useRouter()
   const { data: session } = useSession()
   const { getItemCount, toggleCart } = useCartStore()
   const { items: wishlistItems } = useWishlist()
@@ -58,7 +60,9 @@ export function Navbar() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery.trim())}`
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+      setIsSearchOpen(false)
+      setIsMobileMenuOpen(false)
     }
   }
 

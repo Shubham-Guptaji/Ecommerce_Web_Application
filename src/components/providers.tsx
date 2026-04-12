@@ -4,6 +4,7 @@
 import { useMemo } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SessionProvider } from 'next-auth/react'
+import type { Session } from 'next-auth'
 import { ThemeProvider } from 'next-themes'
 import { Provider } from 'react-redux'
 import { store } from '@/store'
@@ -21,9 +22,10 @@ const SESSION_OPTIONS = {
 
 interface ProvidersProps {
   children: React.ReactNode
+  session: Session | null
 }
 
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, session }: ProvidersProps) {
   const queryClient = useMemo(
     () =>
       new QueryClient({
@@ -40,7 +42,7 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <SessionProvider session={undefined} {...SESSION_OPTIONS}>
+        <SessionProvider session={session} {...SESSION_OPTIONS}>
           <SessionUserSync />
           <SessionSync />
           <CartPersistence />

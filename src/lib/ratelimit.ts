@@ -1,99 +1,109 @@
 // src/lib/ratelimit.ts
 import { env } from './env'
-import type { NextRequest } from 'next/server'
+import { getRedisClient } from './redis'
 
-// Simple in-memory rate limiter (use Redis/Upstash in production)
-class RateLimiter {
-  private records: Map<string, number[]> = new Map()
+type RateLimitResult = {
+  limited: boolean
+  remaining: number
+  resetTime: number
+}
+
+class RedisRateLimiter {
   private readonly windowMs: number
   private readonly maxRequests: number
+  private readonly keyPrefix: string
 
-  constructor(windowMs: number = 60 * 60 * 1000, maxRequests: number = 10) {
+  constructor(keyPrefix: string, windowMs: number = 60 * 60 * 1000, maxRequests: number = 10) {
+    const namespace = env.REDIS_KEY_PREFIX || 'ecom'
+    this.keyPrefix = `${namespace}:${keyPrefix}`
     this.windowMs = windowMs
     this.maxRequests = maxRequests
-
-    // Clean up old records every minute
-    setInterval(() => this.cleanup(), 60 * 1000)
   }
 
-  isLimited(key: string): boolean {
-    const now = Date.now()
-    const requests = this.records.get(key) || []
+  private buildKey(key: string) {
+    const safeKey = encodeURIComponent(key)
+    const window = Math.floor(Date.now() / this.windowMs)
+    return `${this.keyPrefix}:${window}:${safeKey}`
+  }
 
-    // Remove old requests outside the time window
-    const validRequests = requests.filter(time => now - time < this.windowMs)
+  async check(key: string): Promise<RateLimitResult> {
+    const client = await getRedisClient()
 
-    if (validRequests.length >= this.maxRequests) {
-      return true
+    if (!client) {
+      // Fail open if Redis is not configured so auth routes still work locally.
+      return { limited: false, remaining: this.maxRequests, resetTime: 0 }
     }
 
-    validRequests.push(now)
-    this.records.set(key, validRequests)
-    return false
-  }
-
-  private cleanup() {
+    const redisKey = this.buildKey(key)
     const now = Date.now()
-    for (const [key, requests] of this.records.entries()) {
-      const validRequests = requests.filter(time => now - time < this.windowMs)
-      if (validRequests.length === 0) {
-        this.records.delete(key)
-      } else {
-        this.records.set(key, validRequests)
-      }
+    const count = await client.incr(redisKey)
+
+    let ttl = await client.pTTL(redisKey)
+    if (count === 1 || ttl < 0) {
+      await client.pExpire(redisKey, this.windowMs)
+      ttl = this.windowMs
     }
-  }
 
-  getRemaining(key: string): number {
-    const now = Date.now()
-    const requests = this.records.get(key) || []
-    const validRequests = requests.filter(time => now - time < this.windowMs)
-    return Math.max(0, this.maxRequests - validRequests.length)
-  }
+    const result = {
+      limited: count > this.maxRequests,
+      remaining: Math.max(0, this.maxRequests - count),
+      resetTime: ttl > 0 ? now + ttl : 0,
+    }
 
-  getResetTime(key: string): number {
-    const requests = this.records.get(key) || []
-    if (requests.length === 0) return 0
-    const oldest = Math.min(...requests)
-    return oldest + this.windowMs
+    // Temporary debug log for local verification. Safe to delete after checking requests.
+    if (env.NODE_ENV !== 'production') {
+      console.log('[rate-limit]', {
+        key: redisKey,
+        count,
+        maxRequests: this.maxRequests,
+        limited: result.limited,
+        remaining: result.remaining,
+      })
+    }
+
+    return result
   }
 }
 
 // Create rate limiters for different endpoints
-export const registerRateLimiter = new RateLimiter(60 * 60 * 1000, 5) // 5 registrations per hour
-export const forgotPasswordRateLimiter = new RateLimiter(60 * 60 * 1000, 3) // 3 password resets per hour per email
-export const loginRateLimiter = new RateLimiter(15 * 60 * 1000, 10) // 10 login attempts per 15 minutes
+export const registerRateLimiter = new RedisRateLimiter('ratelimit:register', 60 * 60 * 1000, 5)
+export const forgotPasswordRateLimiter = new RedisRateLimiter('ratelimit:forgot-password', 60 * 60 * 1000, 3)
+export const resendVerificationRateLimiter = new RedisRateLimiter('ratelimit:resend-verification', 60 * 60 * 1000, 3)
+export const loginRateLimiter = new RedisRateLimiter('ratelimit:login', 15 * 60 * 1000, 10)
 
 // Helper function to check rate limit
-export const checkRateLimit = (
-  limiter: RateLimiter,
+export const checkRateLimit = async (
+  limiter: RedisRateLimiter,
   key: string,
   { skipCheck = false }: { skipCheck?: boolean } = {}
-): { limited: boolean; remaining: number; resetTime: number } => {
-  if (skipCheck || process.env.NODE_ENV === 'development') {
+): Promise<RateLimitResult> => {
+  if (skipCheck) {
     return { limited: false, remaining: 100, resetTime: 0 }
   }
 
-  const limited = limiter.isLimited(key)
-  return {
-    limited,
-    remaining: limiter.getRemaining(key),
-    resetTime: limiter.getResetTime(key),
-  }
+  return limiter.check(key)
 }
 
-// Get client IP from request (works with Vercel, standard proxies)
-export const getClientIp = (request: NextRequest): string => {
-  const forwarded = request.headers.get('x-forwarded-for')
+function getClientIpFromHeaders(headers: Headers): string {
+  const forwarded = headers.get('x-forwarded-for')
   if (forwarded) {
     return forwarded.split(',')[0].trim()
   }
 
-  const realIp = request.headers.get('x-real-ip')
+  const realIp = headers.get('x-real-ip')
   if (realIp) {
     return realIp
   }
 
   // Fallback for development or direct connections
   return '127.0.0.1'
+}
+
+// Get client IP from Request / NextRequest / Headers.
+export const getClientIp = (requestOrHeaders: Request | Headers | { headers: Headers }): string => {
+  if (requestOrHeaders instanceof Headers) {
+    return getClientIpFromHeaders(requestOrHeaders)
+  }
+
+  return getClientIpFromHeaders(requestOrHeaders.headers)
 }
