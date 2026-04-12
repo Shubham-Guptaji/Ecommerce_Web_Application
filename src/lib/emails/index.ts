@@ -84,10 +84,7 @@ export function sendOrderStatusEmail(order: OrderStatusEmailOrder, user: { name:
 /**
  * Send newsletter welcome email
  */
-export function sendNewsletterWelcomeEmail(email: string): void {
-  const html = newsletterWelcomeEmailTemplate(email)
-
-  sendEmail(email, 'Welcome to Our Newsletter!', html).catch((err) =>
-    console.error('Failed to send newsletter welcome email:', err)
-  )
+export async function sendNewsletterWelcomeEmail(email: string, unsubscribeLink: string): Promise<void> {
+  const html = newsletterWelcomeEmailTemplate(email, unsubscribeLink)
+  await sendEmail(email, 'Welcome to Our Newsletter!', html)
 }

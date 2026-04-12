@@ -2,25 +2,48 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import NewsletterSubscriber from '@/models/NewsletterSubscriber'
-import { sendEmail } from '@/lib/nodemailer'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
+import { sendNewsletterWelcomeEmail } from '@/lib/emails'
+import { buildNewsletterUnsubscribeLink } from '@/lib/newsletter'
+import { checkRateLimit, getClientIp, newsletterSubscribeRateLimiter } from '@/lib/ratelimit'
 
 const newsletterSchema = z.object({
   email: z.string().email('Invalid email address'),
 })
 
+const formatResetTime = (resetTime: number) => {
+  if (!resetTime) return 'Please try again later.'
+
+  const minutes = Math.max(1, Math.ceil((resetTime - Date.now()) / 60000))
+  return `Please wait about ${minutes} minute${minutes === 1 ? '' : 's'} before trying again.`
+}
+
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect()
-
     const body = await request.json()
     const { email } = newsletterSchema.parse(body)
 
     const emailLower = email.toLowerCase()
+    const clientIp = getClientIp(request)
+    const { limited, resetTime } = await checkRateLimit(
+      newsletterSubscribeRateLimiter,
+      `${clientIp}:${emailLower}`
+    )
+
+    if (limited) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Too many newsletter signups from this address. ${formatResetTime(resetTime)}`,
+        },
+        { status: 429 }
+      )
+    }
+
+    await dbConnect()
 
     let subscriber
-    let isNew = false
 
     // Check if already subscribed
     const existing = await NewsletterSubscriber.findOne({ email: emailLower })
@@ -47,47 +70,13 @@ export async function POST(request: NextRequest) {
         isActive: true,
       })
       await subscriber.save()
-      isNew = true
     }
 
     // Send welcome email
     let emailSent = false
     try {
-      const unsubscribeLink = `${process.env.NEXTAUTH_URL}/api/newsletter/unsubscribe?token=${subscriber.unsubscribeToken}&email=${encodeURIComponent(emailLower)}`
-      await sendEmail(
-        email,
-        'Welcome to E-Shop Newsletter!',
-        `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-              .container { background: #f9f9f9; padding: 30px; border-radius: 10px; }
-              .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; margin: -30px -30px 30px; }
-              .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
-              .unsubscribe { font-size: 12px; color: #999; margin-top: 20px; }
-              .unsubscribe a { color: #999; text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1>Welcome to E-Shop!</h1>
-              </div>
-              <p>Thank you for subscribing to our newsletter!</p>
-              <p>We'll keep you updated with the latest deals, new arrivals, and exclusive offers.</p>
-              <div class="unsubscribe">
-                <p>If you wish to unsubscribe, <a href="${unsubscribeLink}">click here</a>.</p>
-              </div>
-              <div class="footer">
-                <p>© ${new Date().getFullYear()} E-Shop. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `
-      )
+      const unsubscribeLink = buildNewsletterUnsubscribeLink(emailLower, subscriber.unsubscribeToken)
+      await sendNewsletterWelcomeEmail(emailLower, unsubscribeLink)
       emailSent = true
       console.log(`Newsletter welcome email sent successfully to ${emailLower}`)
     } catch (emailError) {

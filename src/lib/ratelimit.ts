@@ -71,6 +71,7 @@ export const forgotPasswordRateLimiter = new RedisRateLimiter('ratelimit:forgot-
 export const resendVerificationRateLimiter = new RedisRateLimiter('ratelimit:resend-verification', 60 * 60 * 1000, 3)
 export const loginRateLimiter = new RedisRateLimiter('ratelimit:login', 15 * 60 * 1000, 10)
 export const contactRateLimiter = new RedisRateLimiter('ratelimit:contact', 60 * 60 * 1000, 5)
+export const newsletterSubscribeRateLimiter = new RedisRateLimiter('ratelimit:newsletter-subscribe', 60 * 60 * 1000, 5)
 
 // Helper function to check rate limit
 export const checkRateLimit = async (

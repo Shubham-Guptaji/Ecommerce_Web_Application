@@ -821,7 +821,7 @@ export default function ProfilePage() {
                   </Card>
                 </div>
                 <Separator />
-                <div>
+                {/* <div>
                   <p className="font-medium mb-4">Notification Preferences</p>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -847,7 +847,7 @@ export default function ProfilePage() {
                       />
                     </div>
                   </div>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>

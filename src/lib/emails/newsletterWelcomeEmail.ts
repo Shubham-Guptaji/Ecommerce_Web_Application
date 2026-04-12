@@ -1,5 +1,9 @@
 // File path: src/lib/emails/newsletterWelcomeEmail.ts
-export default function newsletterWelcomeEmailTemplate(email: string): string {
+import { getSiteUrl } from '@/lib/site-url'
+
+export default function newsletterWelcomeEmailTemplate(email: string, unsubscribeLink: string): string {
+  const siteUrl = getSiteUrl()
+
   return `
 <!DOCTYPE html>
 <html>
@@ -27,10 +31,10 @@ export default function newsletterWelcomeEmailTemplate(email: string): string {
       <li>Latest trends and updates</li>
     </ul>
     <p>Stay tuned for amazing updates coming your way!</p>
-    <a href="${process.env.NEXTAUTH_URL}" class="button">Visit Store</a>
+    <a href="${siteUrl}" class="button">Visit Store</a>
     <div class="footer">
       <p>© ${new Date().getFullYear()} E-Shop. All rights reserved.</p>
-      <p><a href="${process.env.NEXTAUTH_URL}/unsubscribe">Unsubscribe</a> from our newsletter anytime.</p>
+      <p><a href="${unsubscribeLink}">Unsubscribe</a> from our newsletter anytime.</p>
     </div>
   </div>
 </body>
