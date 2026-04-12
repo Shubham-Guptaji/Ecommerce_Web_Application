@@ -70,7 +70,7 @@ export default function AdminProductsPage() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('active')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [categories, setCategories] = useState<Array<{ _id: string; name: string }>>([])
 
@@ -168,7 +168,7 @@ export default function AdminProductsPage() {
     try {
       const response = await axiosInstance.delete(`/api/admin/products/${productId}`)
       if (response.data.success) {
-        toast({ title: 'Success', description: 'Product deleted' })
+        toast({ title: 'Success', description: 'Product deactivated' })
         fetchProducts()
       } else {
         throw new Error(response.data.message)

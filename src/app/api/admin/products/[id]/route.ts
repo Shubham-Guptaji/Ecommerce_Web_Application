@@ -1,5 +1,6 @@
 // src/app/api/admin/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { dbConnect } from '@/lib/db'
 import Product from '@/models/Product'
 import { requireAdmin } from '@/lib/adminAuth'
@@ -23,6 +24,33 @@ const productUpdateSchema = z.object({
   specifications: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
   images: z.array(z.object({ url: z.string(), publicId: z.string() })).optional(),
 })
+
+function revalidateProductPaths(options: {
+  slug?: string
+  previousSlug?: string
+  categorySlug?: string
+  previousCategorySlug?: string
+}) {
+  revalidatePath('/admin/products')
+  revalidatePath('/products')
+  revalidatePath('/')
+
+  if (options.slug) {
+    revalidatePath(`/products/${options.slug}`)
+  }
+
+  if (options.previousSlug && options.previousSlug !== options.slug) {
+    revalidatePath(`/products/${options.previousSlug}`)
+  }
+
+  if (options.categorySlug) {
+    revalidatePath(`/category/${options.categorySlug}`)
+  }
+
+  if (options.previousCategorySlug && options.previousCategorySlug !== options.categorySlug) {
+    revalidatePath(`/category/${options.previousCategorySlug}`)
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -106,6 +134,15 @@ export async function PUT(
       }
     }
 
+    const previousSlug = existingProduct.slug
+    await existingProduct.populate('category', 'slug')
+    const previousCategorySlug =
+      existingProduct.category &&
+      typeof existingProduct.category === 'object' &&
+      'slug' in existingProduct.category
+        ? (existingProduct.category as any).slug
+        : undefined
+
     // Build update object
     const updateData: any = {}
     Object.keys(validatedData).forEach(key => {
@@ -122,6 +159,21 @@ export async function PUT(
 
     existingProduct.set(updateData)
     await existingProduct.save()
+    await existingProduct.populate('category', 'slug')
+
+    const categorySlug =
+      existingProduct.category &&
+      typeof existingProduct.category === 'object' &&
+      'slug' in existingProduct.category
+        ? (existingProduct.category as any).slug
+        : undefined
+
+    revalidateProductPaths({
+      slug: existingProduct.slug,
+      previousSlug,
+      categorySlug,
+      previousCategorySlug,
+    })
 
     return NextResponse.json({
       success: true,
@@ -163,6 +215,15 @@ export async function DELETE(
 
     const url = new URL(request.url)
     const hardDelete = url.searchParams.get('hard') === 'true'
+    await product.populate('category', 'slug')
+
+    const productSlug = product.slug
+    const categorySlug =
+      product.category &&
+      typeof product.category === 'object' &&
+      'slug' in product.category
+        ? (product.category as any).slug
+        : undefined
 
     if (hardDelete) {
       // Delete associated Cloudinary images
@@ -178,6 +239,7 @@ export async function DELETE(
         }
       }
       await Product.findByIdAndDelete(id)
+      revalidateProductPaths({ slug: productSlug, categorySlug })
       return NextResponse.json({
         success: true,
         message: 'Product permanently deleted',
@@ -185,6 +247,7 @@ export async function DELETE(
     } else {
       // Soft delete
       await Product.findByIdAndUpdate(id, { isActive: false })
+      revalidateProductPaths({ slug: productSlug, categorySlug })
       return NextResponse.json({
         success: true,
         message: 'Product deactivated',

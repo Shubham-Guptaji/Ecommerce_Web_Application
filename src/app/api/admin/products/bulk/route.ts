@@ -1,5 +1,6 @@
 // src/app/api/admin/products/bulk/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { dbConnect } from '@/lib/db'
 import Product from '@/models/Product'
 import { requireAdmin } from '@/lib/adminAuth'
@@ -27,6 +28,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const affectedProducts = await Product.find({ _id: { $in: ids } })
+      .select('slug')
+      .lean()
+
     const updateData: any = {}
     if (action === 'activate') {
       updateData.isActive = true
@@ -39,6 +44,16 @@ export async function POST(request: NextRequest) {
         { _id: { $in: ids } },
         updateData
       )
+
+      revalidatePath('/admin/products')
+      revalidatePath('/products')
+      revalidatePath('/')
+      affectedProducts.forEach((product: any) => {
+        if (product.slug) {
+          revalidatePath(`/products/${product.slug}`)
+        }
+      })
+
       return NextResponse.json({
         success: true,
         message: `${result.modifiedCount} products ${action}d`,
@@ -50,6 +65,16 @@ export async function POST(request: NextRequest) {
         { _id: { $in: ids } },
         { isActive: false }
       )
+
+      revalidatePath('/admin/products')
+      revalidatePath('/products')
+      revalidatePath('/')
+      affectedProducts.forEach((product: any) => {
+        if (product.slug) {
+          revalidatePath(`/products/${product.slug}`)
+        }
+      })
+
       return NextResponse.json({
         success: true,
         message: `${result.modifiedCount} products deleted (deactivated)`,

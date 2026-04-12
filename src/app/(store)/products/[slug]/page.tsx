@@ -34,8 +34,6 @@ import {
   RefreshCw,
 } from 'lucide-react'
 
-export const revalidate = 3600
-
 interface PageProps {
   params: Promise<{ slug: string }>
 }
@@ -43,7 +41,7 @@ interface PageProps {
 async function getProduct(slug: string) {
   try {
     const res = await fetch(`${process.env.NEXTAUTH_URL}/api/products/by-slug/${slug}`, {
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     })
 
     if (!res.ok) {
