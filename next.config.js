@@ -47,7 +47,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com",
+              "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://store.gravityscript.com",
               "frame-src https://checkout.razorpay.com https://api.razorpay.com",
             ].join('; '),
           },

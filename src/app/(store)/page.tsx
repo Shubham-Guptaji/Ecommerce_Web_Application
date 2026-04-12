@@ -19,6 +19,8 @@ import {
 import { formatCurrency, toPlainObject } from '@/lib/utils'
 import { ProductGrid } from '@/components/product/product-grid'
 
+export const dynamic = 'force-dynamic'
+
 import { CategoryGrid } from '@/components/category/category-grid'
 import { Skeleton } from '@/components/shared/skeleton'
 import { NewsletterForm } from '@/components/shared/newsletter-form'

@@ -5,6 +5,8 @@ import { dbConnect } from '@/lib/db'
 import Category from '@/models/Category'
 import { toPlainObject } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Categories',
   description: 'Browse all product categories in our store',
