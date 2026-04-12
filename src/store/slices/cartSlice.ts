@@ -28,9 +28,14 @@ export const syncCart = createAsyncThunk(
   'cart/syncCart',
   async (_, { getState }) => {
     const state = getState() as RootState
-    const { items, coupon } = state.cart
+    const { items, coupon, userId } = state.cart
     // Only sync if authenticated
-    if (!state.auth.user?.id) return
+    if (!userId && !state.auth.user?.id) return
+
+    if (items.length === 0) {
+      const response = await axiosInstance.delete('/api/cart')
+      return response.data
+    }
 
     const response = await axiosInstance.post('/api/cart', { items, coupon })
     return response.data

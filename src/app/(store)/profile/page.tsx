@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { useSelector } from 'react-redux'
 import { useAppDispatch } from '@/hooks/useRedux'
 import { RootState } from '@/store'
@@ -325,6 +325,7 @@ export default function ProfilePage() {
     if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return
     try {
       await dispatch(deleteAccountAction()).unwrap()
+      await signOut({ redirect: false })
       toast({ title: 'Account Deleted', description: 'Your account has been deleted. Redirecting...' })
       setTimeout(() => (window.location.href = '/'), 1500)
     } catch (error: any) {
@@ -510,13 +511,23 @@ export default function ProfilePage() {
             <Card className="border-red-200">
               <CardHeader>
                 <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                <CardDescription>Permanently delete your account and data</CardDescription>
+                <CardDescription>
+                  {session?.user?.role === 'admin'
+                    ? 'Admin accounts cannot delete themselves'
+                    : 'Permanently delete your account and data'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Once you delete your account, there is no going back. Your orders will remain in our system for record-keeping, but your personal information will be anonymized.
+                  {session?.user?.role === 'admin'
+                    ? 'For safety, admin accounts must be removed by another admin or through a controlled maintenance workflow.'
+                    : 'Once you delete your account, there is no going back. Your orders will remain in our system for record-keeping, but your personal information will be anonymized.'}
                 </p>
-                <Button variant="destructive" onClick={handleDeleteAccount}>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={session?.user?.role === 'admin'}
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Account
                 </Button>

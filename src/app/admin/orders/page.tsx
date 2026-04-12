@@ -164,7 +164,12 @@ export default function AdminOrdersPage() {
   }
 
   const handleBulkStatusUpdate = (newStatus: string) => {
-    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id])
+    const selectedIds = table
+      .getSelectedRowModel()
+      .rows
+      .map((row) => row.original._id)
+      .filter(Boolean)
+
     if (selectedIds.length === 0) {
       toast({
         title: 'No selection',

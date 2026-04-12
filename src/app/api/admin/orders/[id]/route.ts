@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import Order from '@/models/Order'
 import '@/models/Coupon'
 import { requireAdmin } from '@/lib/adminAuth'
@@ -11,6 +12,13 @@ export async function GET(
     const { id } = await params
     const { session, error } = await requireAdmin()
     if (error) return error
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid order ID' },
+        { status: 400 }
+      )
+    }
 
     const order = await Order.findOne({ _id: id })
       .populate('user', 'name email')
@@ -47,6 +55,13 @@ export async function PUT(
     const { id } = await params
     const { session, error } = await requireAdmin()
     if (error) return error
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid order ID' },
+        { status: 400 }
+      )
+    }
 
     const body = await request.json()
     const { status, trackingNumber, courierName, adminNote } = body
@@ -131,6 +146,13 @@ export async function DELETE(
     const { id } = await params
     const { session, error } = await requireAdmin()
     if (error) return error
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid order ID' },
+        { status: 400 }
+      )
+    }
 
     // Soft delete - set status to cancelled
     const order = await Order.findByIdAndUpdate(

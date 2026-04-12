@@ -35,6 +35,8 @@ export async function GET() {
       }),
       User.countDocuments({
         createdAt: { $gte: startOfMonth },
+        role: 'user',
+        isActive: true,
       }),
       Product.countDocuments({ isActive: true }),
       Product.countDocuments({ stock: { $lt: 10 }, isActive: true }),

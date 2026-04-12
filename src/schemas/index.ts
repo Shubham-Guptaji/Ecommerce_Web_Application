@@ -82,9 +82,9 @@ export const addressSchema = z.object({
 
 // Checkout schema
 export const checkoutSchema = z.object({
-    addressId: z.string().min(1, 'Please select a delivery address'),
+  addressId: z.string().min(1, 'Please select a delivery address'),
   deliveryMethod: z.enum(['standard', 'express']),
-  notes: z.string().optional(),
+  notes: z.string().max(500, 'Notes must be 500 characters or less').optional().transform((value) => value?.trim() || undefined),
   couponCode: z.string().optional().nullable(),
 })
 
@@ -150,6 +150,9 @@ export const cartSchema = z.object({
       discountedPrice: z.number().optional().nullable(),
       quantity: z.number().int().positive('Quantity must be positive'),
     })
-  ).min(1, 'At least one item is required'),
-  coupon: z.string().optional().nullable(),
+  ),
+  coupon: z.object({
+    code: z.string().min(1, 'Coupon code is required'),
+    discount: z.number().min(0, 'Coupon discount must be non-negative'),
+  }).optional().nullable(),
 })

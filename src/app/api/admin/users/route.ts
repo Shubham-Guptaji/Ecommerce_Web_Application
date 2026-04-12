@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import Order from '@/models/Order'
 import { requireAdmin } from '@/lib/adminAuth'
@@ -7,6 +8,8 @@ export async function GET(request: NextRequest) {
   try {
     const { session, error } = await requireAdmin()
     if (error) return error
+
+    await dbConnect()
 
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search')
@@ -58,27 +61,37 @@ export async function GET(request: NextRequest) {
       User.countDocuments(query),
     ])
 
-    // Get order counts and total spent for each user
-    const usersWithStats = await Promise.all(
-      users.map(async (user: any) => {
-        const orderStats = await Order.aggregate([
-          { $match: { user: user._id, 'paymentInfo.status': 'paid' } },
+    const userIds = users.map((user: any) => user._id)
+    const orderStats = userIds.length > 0
+      ? await Order.aggregate([
+          {
+            $match: {
+              user: { $in: userIds },
+              status: { $in: ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'] },
+            },
+          },
           {
             $group: {
-              _id: null,
+              _id: '$user',
               orderCount: { $sum: 1 },
               totalSpent: { $sum: '$pricing.total' },
             },
           },
         ])
+      : []
 
-        return {
-          ...user,
-          orderCount: orderStats[0]?.orderCount || 0,
-          totalSpent: orderStats[0]?.totalSpent || 0,
-        }
-      })
+    const statsByUser = new Map(
+      orderStats.map((stat: any) => [stat._id.toString(), stat])
     )
+
+    const usersWithStats = users.map((user: any) => {
+      const stats = statsByUser.get(user._id.toString())
+      return {
+        ...user,
+        orderCount: stats?.orderCount || 0,
+        totalSpent: stats?.totalSpent || 0,
+      }
+    })
 
     return NextResponse.json({
       success: true,

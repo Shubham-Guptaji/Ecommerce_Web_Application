@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }, 0)
 
     let couponDiscount = 0
-    let couponData = null
+    let couponId = null
 
     // Apply coupon if provided
     if (couponCode) {
@@ -116,13 +116,7 @@ export async function POST(request: NextRequest) {
         }
 
         couponDiscount = coupon.calculateDiscount(subtotal)
-
-        couponData = {
-          code: coupon.code,
-          type: coupon.type,
-          value: coupon.value,
-          discountAmount: couponDiscount,
-        }
+        couponId = coupon._id
       }
     }
 
@@ -194,7 +188,7 @@ export async function POST(request: NextRequest) {
         tax,
         total,
       },
-      coupon: couponData,
+      coupon: couponId,
       notes,
       expectedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
       statusHistory: [{

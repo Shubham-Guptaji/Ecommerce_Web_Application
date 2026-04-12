@@ -2,11 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import Order from '@/models/Order'
-import Product from '@/models/Product'
 import { auth } from '@/lib/auth'
 import { requireCSRF } from '@/lib/csrf'
 import { razorpay } from '@/lib/razorpay'
 import { sendOrderStatusEmail } from '@/lib/emails'
+import { incrementInventory } from '@/lib/inventory'
 
 export async function POST(
   request: NextRequest,
@@ -115,15 +115,12 @@ export async function POST(
     })
     await order.save()
 
-    // Restock products and adjust soldCount
-    for (const item of order.items) {
-      const product = item.product as any
-      const productId = product._id
-      const quantity = item.quantity
-      await Product.findByIdAndUpdate(productId, {
-        $inc: { stock: quantity, soldCount: -quantity },
-      })
-    }
+    await incrementInventory(
+      order.items.map((item: any) => ({
+        product: item.product._id,
+        quantity: item.quantity,
+      }))
+    )
 
     // Send notification email to user
     try {

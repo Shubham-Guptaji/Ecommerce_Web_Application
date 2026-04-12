@@ -120,15 +120,12 @@ export async function PUT(
       updateData.description = sanitizeHtml(updateData.description)
     }
 
-    const product = await Product.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    )
+    existingProduct.set(updateData)
+    await existingProduct.save()
 
     return NextResponse.json({
       success: true,
-      data: product,
+      data: existingProduct,
     })
   } catch (error) {
     console.error('Admin product PUT error:', error)

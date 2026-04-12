@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -43,12 +44,6 @@ import {
   Trash2,
 } from 'lucide-react'
 import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  flexRender,
-  ColumnFiltersState,
   SortingState,
 } from '@tanstack/react-table'
 
@@ -64,6 +59,7 @@ const statusColors: Record<string, string> = {
 }
 
 export default function AdminUsersPage() {
+  const { data: session } = useSession()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -72,6 +68,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [verifiedFilter, setVerifiedFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [sorting, setSorting] = useState<SortingState>([])
 
   const fetchUsers = useCallback(() => {
@@ -82,6 +79,7 @@ export default function AdminUsersPage() {
     if (search) params.set('search', search)
     if (roleFilter && roleFilter !== 'all') params.set('role', roleFilter)
     if (verifiedFilter && verifiedFilter !== 'all') params.set('isEmailVerified', verifiedFilter)
+    if (statusFilter && statusFilter !== 'all') params.set('isActive', statusFilter)
 
     if (sorting.length > 0) {
       const { id, desc } = sorting[0]
@@ -94,7 +92,7 @@ export default function AdminUsersPage() {
       .then(result => {
         if (result.success) {
           setUsers(result.data)
-          setTotal(result.total || result.data.length)
+          setTotal(result.pagination?.total || result.data.length)
         }
       })
       .catch(error => {
@@ -108,7 +106,7 @@ export default function AdminUsersPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [pageIndex, pageSize, search, roleFilter, verifiedFilter, sorting])
+  }, [pageIndex, pageSize, search, roleFilter, verifiedFilter, statusFilter, sorting])
 
   useEffect(() => {
     fetchUsers()
@@ -167,6 +165,15 @@ export default function AdminUsersPage() {
   }
 
   const handleDeleteUser = async (userId: string) => {
+    if (session?.user?.id === userId) {
+      toast({
+        title: 'Action blocked',
+        description: 'Admins cannot delete their own account.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (!confirm('Delete this user? This will anonymize their data but keep their orders. This action cannot be undone.')) {
       return
     }
@@ -241,8 +248,19 @@ export default function AdminUsersPage() {
               </SelectContent>
             </Select>
 
-            {(search || roleFilter !== 'all' || verifiedFilter !== 'all') && (
-              <Button variant="outline" onClick={() => { setSearch(''); setRoleFilter('all'); setVerifiedFilter('all'); setPageIndex(0); }}>
+            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPageIndex(0); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Account status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(search || roleFilter !== 'all' || verifiedFilter !== 'all' || statusFilter !== 'all') && (
+              <Button variant="outline" onClick={() => { setSearch(''); setRoleFilter('all'); setVerifiedFilter('all'); setStatusFilter('all'); setPageIndex(0); }}>
                 Clear Filters
               </Button>
             )}
@@ -263,24 +281,25 @@ export default function AdminUsersPage() {
               ))}
             </div>
           ) : users.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Verified</TableHead>
-                    <TableHead>Orders</TableHead>
-                    <TableHead>Spent</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user._id}>
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Verified</TableHead>
+                      <TableHead>Orders</TableHead>
+                      <TableHead>Spent</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar>
@@ -360,25 +379,78 @@ export default function AdminUsersPage() {
                                 </>
                               )}
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                toast({
+                                  title: 'Not available',
+                                  description: 'Email sending is not implemented from this screen yet.',
+                                })
+                              }}
+                            >
                               <Mail className="mr-2 h-4 w-4" />
                               Send Email
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleDeleteUser(user._id)}
                               className="text-red-600"
+                              disabled={session?.user?.id === user._id}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
+                              {session?.user?.id === user._id ? 'Cannot Delete Yourself' : 'Delete User'}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                  Page {pageIndex + 1} of {Math.max(1, Math.ceil(total / pageSize))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageIndex(0)}
+                    disabled={pageIndex === 0}
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
+                    disabled={pageIndex === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPageIndex((current) => {
+                        const lastPageIndex = Math.max(0, Math.ceil(total / pageSize) - 1)
+                        return Math.min(lastPageIndex, current + 1)
+                      })
+                    }
+                    disabled={pageIndex >= Math.max(0, Math.ceil(total / pageSize) - 1)}
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageIndex(Math.max(0, Math.ceil(total / pageSize) - 1))}
+                    disabled={pageIndex >= Math.max(0, Math.ceil(total / pageSize) - 1)}
+                  >
+                    Last
+                  </Button>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No users found</p>

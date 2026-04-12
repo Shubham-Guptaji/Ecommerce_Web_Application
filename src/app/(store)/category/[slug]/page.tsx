@@ -37,6 +37,34 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const { slug } = await params
   const search = await searchParams
 
+  const buildPageHref = (nextPage: number) => {
+    const queryParams = new URLSearchParams()
+
+    Object.entries(search).forEach(([key, value]) => {
+      if (value === undefined) return
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item) queryParams.append(key, item)
+        })
+        return
+      }
+
+      if (value) {
+        queryParams.set(key, value)
+      }
+    })
+
+    if (nextPage <= 1) {
+      queryParams.delete('page')
+    } else {
+      queryParams.set('page', String(nextPage))
+    }
+
+    const query = queryParams.toString()
+    return query ? `/category/${slug}?${query}` : `/category/${slug}`
+  }
+
   // Fetch category
   const categoryRaw = await Category.findOne({ slug, isActive: true })
     .populate('parent', 'name slug')
@@ -211,16 +239,18 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           {pagination.pages > 1 && (
             <div className="flex justify-center gap-2 mt-8">
               {Array.from({ length: pagination.pages }).map((_, i) => (
-                <button
+                <Link
                   key={i}
+                  href={buildPageHref(i + 1)}
                   className={`px-3 py-2 rounded-md ${
                     pagination.page === i + 1
                       ? 'bg-primary text-primary-foreground'
                       : 'border hover:bg-muted'
                   }`}
+                  aria-current={pagination.page === i + 1 ? 'page' : undefined}
                 >
                   {i + 1}
-                </button>
+                </Link>
               ))}
             </div>
           )}

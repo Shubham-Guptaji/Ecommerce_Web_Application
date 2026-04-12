@@ -55,6 +55,19 @@ const categoryFormSchema = z.object({
 
 type CategoryForm = z.infer<typeof categoryFormSchema>
 
+const getCategoryId = (value: any): string | null => {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  if (typeof value === 'object' && value._id) {
+    return value._id.toString()
+  }
+  if (typeof value?.toString === 'function') {
+    const id = value.toString()
+    return id && id !== '[object Object]' ? id : null
+  }
+  return null
+}
+
 export default function AdminCategoriesPage() {
   const dispatch = useAppDispatch()
   const categories = useAppSelector(selectAllCategories)
@@ -95,7 +108,7 @@ export default function AdminCategoriesPage() {
       form.reset({
         name: category.name,
         description: category.description || '',
-        parent: category.parent?._id || '',
+        parent: getCategoryId(category.parent) || '',
         isActive: category.isActive,
         imageUrl: category.image?.url || null,
         imagePublicId: category.image?.publicId || null,
@@ -251,10 +264,13 @@ export default function AdminCategoriesPage() {
 
     categories.forEach((cat) => {
       const node = map.get(cat._id.toString())
-      if (cat.parent) {
-        const parentNode = map.get(cat.parent._id.toString())
+      const parentId = getCategoryId(cat.parent)
+      if (parentId) {
+        const parentNode = map.get(parentId)
         if (parentNode) {
           parentNode.children.push(node)
+        } else {
+          roots.push(node)
         }
       } else {
         roots.push(node)

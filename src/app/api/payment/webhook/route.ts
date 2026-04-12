@@ -4,9 +4,9 @@ import crypto from 'crypto'
 import { dbConnect } from '@/lib/db'
 import Order from '@/models/Order'
 import Cart from '@/models/Cart'
-import Product from '@/models/Product'
 import Coupon from '@/models/Coupon'
 import { env } from '@/lib/env'
+import { decrementInventory } from '@/lib/inventory'
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,43 +71,55 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        const unpaidOrders = orders.filter((order: any) => order.paymentInfo.status !== 'paid')
+        const pendingOrders = orders.filter((order: any) => order.paymentInfo.status !== 'paid')
 
-        for (const order of unpaidOrders) {
-          order.paymentInfo.razorpayPaymentId = paymentId
-          order.paymentInfo.status = 'paid'
-          order.status = 'confirmed'
-          order.statusHistory.push({
-            status: 'confirmed',
-            timestamp: new Date(),
-            note: 'Payment confirmed via webhook',
-          })
+        for (const order of pendingOrders) {
+          const claimedOrder = await Order.findOneAndUpdate(
+            {
+              _id: order._id,
+              'paymentInfo.status': { $ne: 'paid' },
+            },
+            {
+              $set: {
+                'paymentInfo.razorpayPaymentId': paymentId,
+                'paymentInfo.status': 'paid',
+                status: 'confirmed',
+              },
+              $push: {
+                statusHistory: {
+                  status: 'confirmed',
+                  timestamp: new Date(),
+                  note: 'Payment confirmed via webhook',
+                },
+              },
+            },
+            { new: true }
+          )
 
-          // Reduce stock
-          for (const item of order.items) {
-            const product = item.product as any
-            const productId = product._id
-            const quantity = item.quantity
-
-            await Product.findByIdAndUpdate(productId, {
-              $inc: { stock: -quantity, soldCount: quantity },
-            })
+          if (!claimedOrder) {
+            continue
           }
+
+          await decrementInventory(
+            claimedOrder.items.map((item: any) => ({
+              product: item.product,
+              quantity: item.quantity,
+            }))
+          )
 
           // Update coupon usage
           if (order.coupon && order.user) {
-            await Coupon.findByIdAndUpdate(order.coupon._id, {
+            const couponId = order.coupon._id || order.coupon
+            await Coupon.findByIdAndUpdate(couponId, {
               $inc: { usedCount: 1 },
               $push: { usedBy: order.user },
             })
           }
-
-          await order.save()
         }
 
         const userIds = Array.from(
           new Set(
-            unpaidOrders
+            pendingOrders
               .map((order: any) => order.user?.toString())
               .filter(Boolean)
           )

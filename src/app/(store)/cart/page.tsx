@@ -30,8 +30,9 @@ export default function CartPage() {
 
   const subtotal = getSubtotal()
   const deliveryCharge = subtotal >= 499 ? 0 : 49
-  const tax = subtotal * 0.18
-  const total = subtotal - (couponDiscount || 0) + deliveryCharge + tax
+  const taxableSubtotal = Math.max(0, subtotal - (couponDiscount || 0))
+  const tax = taxableSubtotal * 0.18
+  const total = taxableSubtotal + deliveryCharge + tax
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) {
@@ -52,7 +53,7 @@ export default function CartPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: couponInput,
-          subtotal,
+          orderTotal: subtotal,
         }),
       })
 

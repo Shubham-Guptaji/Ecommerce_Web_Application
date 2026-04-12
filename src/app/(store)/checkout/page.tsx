@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Form, FormField, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Skeleton } from '@/components/shared/skeleton'
 import { useCartStore } from '@/store/cartStore'
@@ -34,7 +35,7 @@ const checkoutSchema = z.object({
   addressId: z.string().min(1, 'Please select a delivery address'),
   deliveryMethod: z.enum(['standard', 'express']),
   paymentMethod: z.enum(['razorpay', 'cod']),
-  notes: z.string().max(500).optional(),
+  notes: z.string().max(500).optional().transform((value) => value?.trim() || ''),
 })
 
 type CheckoutForm = z.infer<typeof checkoutSchema>
@@ -49,6 +50,7 @@ export default function CheckoutPage() {
     couponCode,
     couponDiscount,
     removeCoupon,
+    syncCart,
   } = useCartStore()
 
   const [addresses, setAddresses] = useState<any[]>([])
@@ -65,8 +67,9 @@ export default function CheckoutPage() {
     deliveryCharge = 99
   }
 
-  const tax = subtotal * 0.18
-  const total = subtotal - (couponDiscount || 0) + deliveryCharge + tax
+  const taxableSubtotal = Math.max(0, subtotal - (couponDiscount || 0))
+  const tax = taxableSubtotal * 0.18
+  const total = taxableSubtotal + deliveryCharge + tax
 
   const form = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -173,13 +176,16 @@ export default function CheckoutPage() {
     setSubmitting(true)
 
     try {
+      await syncCart()
+      const normalizedNotes = data.notes?.trim() || undefined
+
       if (data.paymentMethod === 'razorpay') {
         // Razorpay flow using axios
         const response = await axiosInstance.post('/api/payment/create-order', {
           addressId: data.addressId,
           deliveryMethod: data.deliveryMethod,
           couponCode: couponCode || null,
-          notes: data.notes,
+          notes: normalizedNotes,
         })
 
         if (!response.data.success) {
@@ -208,7 +214,7 @@ export default function CheckoutPage() {
           addressId: data.addressId,
           deliveryMethod: data.deliveryMethod,
           couponCode: couponCode || null,
-          notes: data.notes,
+          notes: normalizedNotes,
         })
 
         if (!response.data.success) {
@@ -266,7 +272,7 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form id="checkout-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Delivery Address */}
               <Card>
                 <CardHeader>
@@ -533,13 +539,19 @@ export default function CheckoutPage() {
                     control={form.control}
                     name="notes"
                     render={({ field }) => (
-                      <FormControl>
-                        <textarea
-                          className="w-full min-h-[100px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="Add any special instructions for your order..."
-                          {...field}
-                        />
-                      </FormControl>
+                      <div className="space-y-2">
+                        <FormControl>
+                          <Textarea
+                            className="min-h-[100px] resize-none"
+                            placeholder="Add any special instructions for your order..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          {field.value?.length || 0}/500
+                        </p>
+                        <FormMessage />
+                      </div>
                     )}
                   />
                 </CardContent>
@@ -633,9 +645,10 @@ export default function CheckoutPage() {
               </div>
 
               <Button
+                type="submit"
+                form="checkout-form"
                 className="w-full mt-6"
                 size="lg"
-                onClick={form.handleSubmit(onSubmit)}
                 disabled={submitting || !form.getValues('addressId')}
               >
                 {submitting ? (

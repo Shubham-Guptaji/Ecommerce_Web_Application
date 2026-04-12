@@ -47,7 +47,7 @@ export function ProductReviewsClient({ product, reviews: initialReviews, hasPurc
         </TabsList>
 
         <TabsContent value="description" className="mt-0">
-          <div className="prose dark:prose-invert max-w-none">
+          <div className="product-rich-text max-w-none">
             <div
               dangerouslySetInnerHTML={{
                 __html: sanitizeHtml(product.description || ''),

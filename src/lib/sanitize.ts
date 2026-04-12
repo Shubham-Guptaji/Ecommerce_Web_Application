@@ -194,6 +194,10 @@ function sanitizeUrl(value: string): string | null {
     return value
   }
 
+  if (/^www\./i.test(value) || /^[^\s]+\.[^\s]+$/.test(value)) {
+    return `https://${value}`
+  }
+
   return null
 }
 

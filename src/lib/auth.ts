@@ -21,7 +21,11 @@ class MaintenanceModeSignInError extends CredentialsSignin {
   code = 'maintenance_mode'
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+class InactiveAccountSignInError extends CredentialsSignin {
+  code = 'inactive'
+}
+
+const nextAuthConfig = NextAuth({
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -55,6 +59,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user.password) {
           return null
+        }
+
+        if (!user.isActive) {
+          throw new InactiveAccountSignInError()
         }
 
         const isValid = await compare(
@@ -91,7 +99,69 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
+      if (account?.provider === 'google' && user.email) {
+        await dbConnect()
+
+        let dbUser = await User.findOne({ email: user.email })
+
+        if (!dbUser) {
+          dbUser = await User.create({
+            name: user.name || user.email.split('@')[0],
+            email: user.email,
+            role: 'user',
+            isActive: true,
+            isEmailVerified: true,
+            avatar: user.image
+              ? {
+                  url: user.image,
+                  publicId: '',
+                }
+              : undefined,
+          })
+        } else {
+          const updates: {
+            name?: string
+            avatar?: { url: string; publicId: string }
+            isEmailVerified?: boolean
+          } = {}
+
+          if (!dbUser.name && user.name) {
+            updates.name = user.name
+          }
+
+          if ((!dbUser.avatar?.url || dbUser.avatar.url !== user.image) && user.image) {
+            updates.avatar = {
+              url: user.image,
+              publicId: dbUser.avatar?.publicId || '',
+            }
+          }
+
+          if (!dbUser.isEmailVerified) {
+            updates.isEmailVerified = true
+          }
+
+          if (Object.keys(updates).length > 0) {
+            dbUser = await User.findByIdAndUpdate(dbUser._id, updates, {
+              new: true,
+            })
+          }
+        }
+
+        if (!dbUser) {
+          return false
+        }
+
+        if (!dbUser.isActive) {
+          return '/sign-in?error=inactive'
+        }
+
+        user.id = dbUser._id.toString()
+        user._id = dbUser._id.toString()
+        user.role = dbUser.role
+        user.isEmailVerified = dbUser.isEmailVerified
+      }
+
       if (!(await isMaintenanceModeEnabled())) {
         return true
       }
@@ -114,10 +184,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user }) {
       if (user) {
-        token._id = user._id.toString()
-        token.role = user.role
-        token.isEmailVerified = user.isEmailVerified
+        const userId = user._id?.toString?.() || user.id?.toString?.()
+
+        if (userId) {
+          token._id = userId
+          token.sub = userId
+        }
+
+        if (user.role) token.role = user.role
+        if (user.isEmailVerified !== undefined) token.isEmailVerified = user.isEmailVerified
       }
+
+      const tokenUserId = token._id?.toString?.() || token.sub?.toString?.()
+      if (tokenUserId && /^[0-9a-fA-F]{24}$/.test(tokenUserId)) {
+        await dbConnect()
+        const dbUser = await User.findById(tokenUserId)
+          .select('role isEmailVerified isActive')
+          .lean() as { role?: 'user' | 'admin'; isEmailVerified?: boolean; isActive?: boolean } | null
+
+        if (!dbUser || dbUser.isActive === false) {
+          token.deactivated = true
+          return token
+        }
+
+        token.deactivated = false
+        if (dbUser.role) token.role = dbUser.role
+        if (dbUser.isEmailVerified !== undefined) token.isEmailVerified = dbUser.isEmailVerified
+      }
+
       return token
     },
     async session({ session, token }) {
@@ -126,9 +220,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         _id?: string
         role?: 'user' | 'admin'
         isEmailVerified?: boolean
+        deactivated?: boolean
       } | null | undefined
-      if (session.user && customToken?._id) {
-        session.user.id = customToken._id
+
+      if (customToken?.deactivated) {
+        return null as any
+      }
+
+      const sessionUserId = customToken?._id || token.sub
+
+      if (session.user && sessionUserId) {
+        session.user.id = sessionUserId
         if (customToken?.role) session.user.role = customToken.role
         if (customToken?.isEmailVerified !== undefined) session.user.isEmailVerified = customToken.isEmailVerified
       }
@@ -153,5 +255,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 })
+
+const rawAuth = nextAuthConfig.auth
+
+export const handlers = nextAuthConfig.handlers
+export const signIn = nextAuthConfig.signIn
+export const signOut = nextAuthConfig.signOut
+export const auth = (async (...args: any[]) => {
+  const session = await (rawAuth as any)(...args)
+  const sessionUser = (session as any)?.user
+
+  if (!sessionUser?.id || !/^[0-9a-fA-F]{24}$/.test(sessionUser.id)) {
+    return session
+  }
+
+  await dbConnect()
+  const dbUser = await User.findById(sessionUser.id)
+    .select('role isEmailVerified isActive')
+    .lean() as { role?: 'user' | 'admin'; isEmailVerified?: boolean; isActive?: boolean } | null
+
+  if (!dbUser || dbUser.isActive === false) {
+    return null
+  }
+
+  if (dbUser.role) {
+    sessionUser.role = dbUser.role
+  }
+  if (dbUser.isEmailVerified !== undefined) {
+    sessionUser.isEmailVerified = dbUser.isEmailVerified
+  }
+
+  return session
+}) as any
 
 export const authConfig = auth

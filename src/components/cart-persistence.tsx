@@ -1,8 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { hydrateCart, selectCartItems, selectCartUserId } from '@/store/slices/cartSlice'
+import { useEffect, useMemo, useRef } from 'react'
+import { useSelector } from 'react-redux'
+import {
+  hydrateCart,
+  selectCartItems,
+  selectCartUserId,
+  selectCartCoupon,
+  setCoupon,
+  clearCoupon,
+} from '@/store/slices/cartSlice'
 import { syncCart } from '@/store/slices/cartSlice'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useAppDispatch } from '@/hooks/useRedux'
@@ -13,10 +20,12 @@ export function CartPersistence() {
   const dispatch = useAppDispatch()
   const items = useSelector(selectCartItems)
   const userId = useSelector(selectCartUserId)
+  const coupon = useSelector(selectCartCoupon)
   const initialized = useRef(false)
 
-  // Debounced items for syncing
-  const debouncedItems = useDebounce(items, 1000) // 1 second debounce
+  // Debounce a stable serialized key, not a fresh object literal.
+  const cartSyncKey = useMemo(() => JSON.stringify({ items, coupon }), [items, coupon])
+  const debouncedCartSyncKey = useDebounce(cartSyncKey, 1000)
 
   // On mount, hydrate from localStorage if available
   useEffect(() => {
@@ -28,8 +37,14 @@ export function CartPersistence() {
           // The Zustand persist stored as { state: { cart: { items: [...] } } }
           // Adjust based on actual format if needed
           const savedItems = parsed?.state?.cart?.items || parsed?.items
+          const savedCoupon = parsed?.state?.cart?.coupon || parsed?.coupon
           if (savedItems && Array.isArray(savedItems)) {
             dispatch(hydrateCart(savedItems))
+          }
+          if (savedCoupon?.code && savedCoupon?.discount !== undefined) {
+            dispatch(setCoupon(savedCoupon))
+          } else {
+            dispatch(clearCoupon())
           }
         } catch (error) {
           console.error('Failed to parse saved cart:', error)
@@ -42,16 +57,16 @@ export function CartPersistence() {
   // Save to localStorage whenever items change
   useEffect(() => {
     if (initialized.current && typeof window !== 'undefined') {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ items }))
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ items, coupon }))
     }
-  }, [items])
+  }, [items, coupon])
 
-  // Sync to server when user is authenticated and debounced items change
+  // Sync to server when user is authenticated and debounced cart state changes
   useEffect(() => {
-    if (initialized.current && userId && debouncedItems.length > 0) {
+    if (initialized.current && userId) {
       dispatch(syncCart())
     }
-  }, [userId, debouncedItems, dispatch])
+  }, [userId, debouncedCartSyncKey, dispatch])
 
   return null
 }

@@ -1,9 +1,9 @@
 // src/app/admin/users/[id]/page.tsx
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -74,17 +74,24 @@ interface UserDetail {
   isActive: boolean
 }
 
-export default function AdminUserDetailPage({ params }: { params: { id: string } }) {
+export default function AdminUserDetailPage() {
   const { data: session } = useSession()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [user, setUser] = useState<UserDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const isCurrentAdmin = session?.user?.id === user?._id
+  const userId = params?.id
 
    
    
    
   useEffect(() => {
+    if (!userId) {
+      return
+    }
+
     if (!session || session.user?.role !== 'admin') {
       router.push('/sign-in')
       return
@@ -93,7 +100,7 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
     const fetchUserDetail = async () => {
       setLoading(true)
       try {
-        const response = await fetch(`/api/admin/users/${params.id}`)
+        const response = await fetch(`/api/admin/users/${userId}`)
         const result = await response.json()
 
         if (result.success) {
@@ -118,7 +125,7 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
     }
 
     fetchUserDetail()
-  }, [session, router, params.id])
+  }, [session, router, userId])
 
   const handleRoleChange = async (newRole: string) => {
     if (!user) return
@@ -182,6 +189,15 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
 
   const handleDeleteUser = async () => {
     if (!user) return
+    if (isCurrentAdmin) {
+      toast({
+        title: 'Action blocked',
+        description: 'Admins cannot delete their own account.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone and will anonymize their order history.')) {
       return
     }
@@ -274,9 +290,9 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
               </>
             )}
           </Button>
-          <Button variant="destructive" onClick={handleDeleteUser} disabled={updating}>
+          <Button variant="destructive" onClick={handleDeleteUser} disabled={updating || isCurrentAdmin}>
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            {isCurrentAdmin ? 'Cannot Delete Yourself' : 'Delete'}
           </Button>
         </div>
       </div>

@@ -574,12 +574,23 @@ export default function AdminOrderDetailPage() {
                 <FileText className="h-5 w-5" />
                 <h2 className="text-xl font-semibold">Add Internal Note</h2>
               </div>
+              {order.notes && (
+                <div className="mb-4 rounded-md border bg-muted/30 p-3">
+                  <p className="text-sm font-medium mb-1">Customer Order Note</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{order.notes}</p>
+                </div>
+              )}
               <Textarea
                 placeholder="Add a note about this order (internal use only)..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
               />
+              {order.adminNote && (
+                <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">
+                  Current internal note: {order.adminNote}
+                </p>
+              )}
               <Button onClick={handleSaveNote} disabled={updating} className="mt-4">
                 <Send className="mr-2 h-4 w-4" />
                 Save Note

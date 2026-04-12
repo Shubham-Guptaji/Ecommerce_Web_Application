@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 
-export default auth((req) => {
+export default auth((req: any) => {
   const path = req.nextUrl.pathname
 
   if (path === '/sign-in' || path === '/sign-up') {

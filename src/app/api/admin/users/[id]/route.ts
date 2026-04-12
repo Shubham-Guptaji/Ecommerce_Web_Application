@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import Order from '@/models/Order'
 import { requireAdmin } from '@/lib/adminAuth'
@@ -11,6 +12,8 @@ export async function GET(
     const { id } = await params
     const { session, error } = await requireAdmin()
     if (error) return error
+
+    await dbConnect()
 
     const user = await User.findById(id)
       .select('-password -resetPasswordToken -emailVerifyToken')
@@ -25,9 +28,11 @@ export async function GET(
       )
     }
 
-    // Get order statistics
+    const spendStatuses = ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered']
+
+    // Get order statistics for actual spend/completed pipeline orders
     const orderStats = await Order.aggregate([
-      { $match: { user: user._id } },
+      { $match: { user: user._id, status: { $in: spendStatuses } } },
       {
         $group: {
           _id: '$status',
@@ -88,10 +93,33 @@ export async function PUT(
     const { session, error } = await requireAdmin()
     if (error) return error
 
+    await dbConnect()
+
     const body = await request.json()
     const { role, isActive } = body
 
     const updateData: any = {}
+
+    if (role && role !== 'user' && role !== 'admin') {
+      return NextResponse.json(
+        { success: false, message: 'Invalid role' },
+        { status: 400 }
+      )
+    }
+
+    if (session.user.id === id && role && role !== 'admin') {
+      return NextResponse.json(
+        { success: false, message: 'Admins cannot remove their own admin access.' },
+        { status: 403 }
+      )
+    }
+
+    if (session.user.id === id && isActive === false) {
+      return NextResponse.json(
+        { success: false, message: 'Admins cannot deactivate their own account.' },
+        { status: 403 }
+      )
+    }
 
     if (role) updateData.role = role
     if (isActive !== undefined) updateData.isActive = isActive
@@ -131,12 +159,22 @@ export async function DELETE(
     const { session, error } = await requireAdmin()
     if (error) return error
 
+    await dbConnect()
+
+    if (session.user.id === id) {
+      return NextResponse.json(
+        { success: false, message: 'Admins cannot delete their own account.' },
+        { status: 403 }
+      )
+    }
+
     // Anonymize user data but keep orders intact
     const anonData = {
       name: 'Deleted User',
       email: `deleted-${id}@deleted.com`,
       password: 'deleted',
       avatar: {},
+      isEmailVerified: false,
       isActive: false,
     }
 

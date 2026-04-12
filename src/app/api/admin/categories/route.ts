@@ -6,10 +6,24 @@ import Product from '@/models/Product'
 import { requireAdmin } from '@/lib/adminAuth'
 import { categorySchema } from '@/schemas'
 
+const getCategoryId = (value: any): string | null => {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  if (typeof value === 'object' && value._id) {
+    return value._id.toString()
+  }
+  if (typeof value?.toString === 'function') {
+    const id = value.toString()
+    return id && id !== '[object Object]' ? id : null
+  }
+  return null
+}
+
 export async function GET() {
   try {
     const { session, error } = await requireAdmin()
     if (error) return error
+    await dbConnect()
 
     // Fetch all categories with parent populated
     const categories = await Category.find()
@@ -39,10 +53,13 @@ export async function GET() {
 
       cats.forEach((cat) => {
         const node = map.get(cat._id.toString())
-        if (cat.parent) {
-          const parentNode = map.get(cat.parent._id.toString())
+        const parentId = getCategoryId(cat.parent)
+        if (parentId) {
+          const parentNode = map.get(parentId)
           if (parentNode) {
             parentNode.children.push(node)
+          } else {
+            roots.push(node)
           }
         } else {
           roots.push(node)
@@ -87,6 +104,7 @@ export async function POST(request: NextRequest) {
   try {
     const { session, error } = await requireAdmin()
     if (error) return error
+    await dbConnect()
 
     const body = await request.json()
     const { name, description, parent, isActive, imageUrl, imagePublicId } = body

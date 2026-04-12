@@ -1,4 +1,5 @@
 // src/app/(store)/products/page.tsx
+import Link from 'next/link'
 import { Metadata } from 'next'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -23,6 +24,34 @@ export default async function ProductsPage({
 }) {
   await dbConnect()
   const search = await searchParams
+
+  const buildPageHref = (nextPage: number) => {
+    const params = new URLSearchParams()
+
+    Object.entries(search).forEach(([key, value]) => {
+      if (value === undefined) return
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item) params.append(key, item)
+        })
+        return
+      }
+
+      if (value) {
+        params.set(key, value)
+      }
+    })
+
+    if (nextPage <= 1) {
+      params.delete('page')
+    } else {
+      params.set('page', String(nextPage))
+    }
+
+    const query = params.toString()
+    return query ? `/products?${query}` : '/products'
+  }
 
   // Build query from searchParams
   const buildQuery: any = { isActive: true }
@@ -200,16 +229,18 @@ export default async function ProductsPage({
           {pagination.pages > 1 && (
             <div className="flex justify-center gap-2 mt-8">
               {Array.from({ length: pagination.pages }).map((_, i) => (
-                <button
+                <Link
                   key={i}
+                  href={buildPageHref(i + 1)}
                   className={`px-3 py-2 rounded-md ${
                     pagination.page === i + 1
                       ? 'bg-primary text-primary-foreground'
                       : 'border hover:bg-muted'
                   }`}
+                  aria-current={pagination.page === i + 1 ? 'page' : undefined}
                 >
                   {i + 1}
-                </button>
+                </Link>
               ))}
             </div>
           )}

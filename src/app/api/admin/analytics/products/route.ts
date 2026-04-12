@@ -13,9 +13,26 @@ export async function GET() {
 
     await dbConnect()
 
-    // 1. Top 5 products by soldCount with name and revenue
+    const startOfWeek = new Date()
+    const day = startOfWeek.getDay()
+    const diffToMonday = day === 0 ? 6 : day - 1
+    startOfWeek.setHours(0, 0, 0, 0)
+    startOfWeek.setDate(startOfWeek.getDate() - diffToMonday)
+
+    const completedOrderMatch = {
+      status: {
+        $in: ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'],
+      },
+    }
+
+    // 1. Top 5 products sold this week by units sold
     const topProducts = await Order.aggregate([
-      { $match: { 'paymentInfo.status': 'paid' } },
+      {
+        $match: {
+          ...completedOrderMatch,
+          createdAt: { $gte: startOfWeek },
+        },
+      },
       { $unwind: '$items' },
       {
         $group: {
@@ -46,36 +63,38 @@ export async function GET() {
       },
     ])
 
-    // 2. Revenue by category
+    // 2. Revenue by category across completed orders
     const revenueByCategory = await Order.aggregate([
-      { $match: { 'paymentInfo.status': 'paid' } },
+      { $match: completedOrderMatch },
+      { $unwind: '$items' },
       {
         $lookup: {
           from: 'products',
           localField: 'items.product',
           foreignField: '_id',
-          as: 'productDetails',
+          as: 'productDetail',
         },
       },
-      { $unwind: '$productDetails' },
-      {
-        $group: {
-          _id: '$productDetails.category',
-          revenue: { $sum: '$items.subtotal' },
-        },
-      },
+      { $unwind: { path: '$productDetail', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: 'categories',
-          localField: '_id',
+          localField: 'productDetail.category',
           foreignField: '_id',
           as: 'category',
         },
       },
       { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
       {
+        $group: {
+          _id: '$category._id',
+          categoryName: { $first: '$category.name' },
+          revenue: { $sum: '$items.subtotal' },
+        },
+      },
+      {
         $project: {
-          categoryName: '$category.name',
+          categoryName: { $ifNull: ['$categoryName', 'Uncategorized'] },
           revenue: 1,
         },
       },

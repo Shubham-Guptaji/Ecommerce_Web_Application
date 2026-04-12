@@ -277,7 +277,7 @@ export default async function HomePage() {
                     href={`/category/${category.slug}`}
                     className="flex-shrink-0 w-64 snap-start group relative overflow-hidden rounded-lg border hover:shadow-lg transition-shadow"
                   >
-                    <div className="aspect-square bg-muted">
+                    <div className="relative aspect-square bg-muted">
                       {category.image?.url ? (
                         <Image
                           src={category.image.url}

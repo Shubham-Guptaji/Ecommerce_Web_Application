@@ -27,6 +27,16 @@ export async function POST(request: NextRequest) {
     // Check if user already exists
     const existingUser = await User.findOne({ email })
     if (existingUser) {
+      if (existingUser.isActive === false) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'This account has been deactivated. Please contact support if you need access again.',
+          },
+          { status: 403 }
+        )
+      }
+
       return NextResponse.json(
         { success: false, message: 'User with this email already exists' },
         { status: 409 }

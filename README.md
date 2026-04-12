@@ -7,15 +7,13 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7.2-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-8.8.4-47a248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.14-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-latest-000?logo=shadcn/ui)](https://ui.shadcn.com/)
-[![Redux](https://img.shields.io/badge/Redux-2.11.2-764abc?logo=redux&logoColor=white)](https://redux.js.org/)
+[![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-latest-000)](https://ui.shadcn.com/)
+[![Redux](https://img.shields.io/badge/Redux_Toolkit-2.11.2-764abc?logo=redux&logoColor=white)](https://redux-toolkit.js.org/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-2.9.5-005bbb?logo=razorpay&logoColor=white)](https://razorpay.com/)
 [![Cloudinary](https://img.shields.io/badge/Cloudinary-2.5.1-3448c5?logo=cloudinary&logoColor=white)](https://cloudinary.com/)
 
-
-[![GitHub license](https://img.shields.io/github/license/your-username/ecom)](LICENSE)
-[![CodeFactor](https://www.codefactor.io/repository/github/your-username/ecom/badge)](https://www.codefactor.io/repository/github/your-username/ecom)
-[![Vercel](https://img.shields.io/badge/deployed_on-Vercel-black?logo=vercel)](https://vercel.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Vercel](https://img.shields.io/badge/deployed_on-Vercel-black?logo=vercel)](https://store.gravityscript.com)
 
 </div>
 
@@ -23,44 +21,49 @@
 
 ## 📖 Overview
 
-A **full-featured, production-ready e-commerce platform** built with modern web technologies. This application provides a complete online shopping experience with a powerful admin dashboard, secure payment processing, and seamless user management.
+A **full-featured, production-ready e-commerce platform** built with modern web technologies. It delivers a complete shopping experience with a polished storefront, a capable admin dashboard, secure payment handling, user account management, newsletter tooling, and operational controls like maintenance mode.
 
-Whether you're launching a small boutique or scaling to enterprise level, this platform offers the flexibility, security, and performance needed for today's competitive e-commerce landscape.
+This project is designed for real-world commerce workflows, including product discovery, cart and checkout, order tracking, profile and address management, coupon handling, Razorpay payments, Cloudinary media uploads, and email-driven auth flows.
+
+---
 
 ## ✨ Features
 
 ### 🛍️ Store Front
-- **Stunning Homepage** - Hero sections, featured products, flash sales, and promotional banners
-- **Advanced Product Catalog** - Filter by category, price, ratings; sort and paginate effortlessly
-- **Rich Product Pages** - Image galleries, specifications, customer reviews, and related products
-- **Smart Shopping Cart** - Persistent cart with localStorage sync and quantity management
-- **Seamless Checkout** - Multi-step process with address book and order summary
-- **Secure Payments** - Razorpay integration with signature verification
-- **Order Management** - Track orders, view history, and real-time status updates
-- **User Profiles** - Account settings, address management, and wishlist
+- **Modern Homepage** - Featured products, promotional sections, newsletter signup, and conversion-focused landing experience
+- **Advanced Product Catalog** - Filter by category, price, rating, stock, featured status, and search terms
+- **Rich Product Pages** - Slug-based product detail pages with gallery, specs, reviews, and related products
+- **Smart Shopping Cart** - Persistent cart experience with quantity updates, coupon support, and cart syncing
+- **Flexible Checkout** - Address selection, delivery method support, COD and Razorpay-based payment flows
+- **Order Management** - Order history, order detail pages, invoice download, cancellation, returns, and refund handling
+- **User Profiles** - Profile editing, password updates, address book management, and wishlist support
+- **Store Pages** - About, contact, FAQ, privacy, terms, returns, and track-order pages
 
 ### 👨‍💼 Admin Panel
-- **Analytics Dashboard** - Revenue charts, top products, order statistics, and KPIs
-- **Product Management** - Full CRUD, bulk actions, Cloudinary image uploads
-- **Order Processing** - View, update status, track shipments, handle refunds
-- **User Management** - Role-based access, account status control
-- **Category System** - Hierarchical categories with images and SEO-friendly URLs
-- **Coupon Engine** - Create discount codes with percentage/fixed amounts
-- **Store Settings** - Configure email templates and store preferences
+- **Analytics Dashboard** - Revenue and order insights, top products, and category-level reporting
+- **Product Management** - Create, update, delete, and bulk-manage products with Cloudinary-backed media
+- **Category Management** - Manage catalog categories and storefront organization
+- **Coupon Engine** - Create and maintain discount codes with rules, limits, and expiry
+- **Order Processing** - Review orders, update statuses, export data, and trigger refunds
+- **User Management** - Inspect and manage user accounts from the admin area
+- **Newsletter Center** - Subscriber management, exports, welcome emails, and campaign tooling
+- **Store Settings** - Update store preferences and control maintenance mode
 
 ### 🔐 Authentication & Security
 - Email/password registration with verification
-- Google OAuth social login
-- Password reset with secure tokens
-- Session management with NextAuth.js v5
-- Role-based access control (admin vs customer)
+- Google OAuth login
+- Password reset and password change flows
+- NextAuth.js v5 session handling
+- Role-based access control for admin routes
+- Rate limiting for key auth and form flows when Redis is configured
+- CSRF protection on sensitive actions such as payment/order operations
 
 ### 🎨 User Experience
-- Dark/Light mode toggle with system preference detection
-- Fully responsive design (mobile, tablet, desktop)
-- Smooth animations with Tailwind CSS
-- Loading states and error boundaries
-- Real-time search and filtering
+- Responsive design for desktop, tablet, and mobile
+- Dark/light mode support
+- Toast notifications, loading states, error handling, and empty states
+- Accessible UI patterns using shadcn/ui and Radix primitives
+- Smooth admin and storefront workflows with reusable components
 
 ---
 
@@ -71,35 +74,36 @@ Whether you're launching a small boutique or scaling to enterprise level, this p
 |------------|---------|---------|
 | **Next.js** | 16.2.1 | React framework with App Router |
 | **React** | 19.0.0 | UI library |
-| **TypeScript** | 5.7.2 | Type-safe JavaScript |
+| **TypeScript** | 5.7.2 | Type-safe development |
 | **Tailwind CSS** | 3.4.14 | Utility-first styling |
-| **shadcn/ui** | Latest | Pre-built accessible components |
-| **Redux Toolkit** | 2.11.2 | State management |
-| **TanStack Query** | 5.95.2 | Server state management |
+| **shadcn/ui** | Latest | Accessible UI building blocks |
+| **Redux Toolkit** | 2.11.2 | Client state management |
+| **TanStack Query** | 5.95.2 | Async/server state management |
 
 ### Backend & Database
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | **MongoDB** | 8.8.4 | Primary database |
 | **Mongoose** | 8.8.4 | ODM for MongoDB |
-| **NextAuth.js** | 5.0.0-beta.30 | Authentication |
-| **Nodemailer** | 7.0.13 | Email delivery |
+| **NextAuth.js** | 5.0.0-beta.30 | Authentication and session management |
+| **Nodemailer** | 7.0.13 | Transactional email delivery |
 
 ### Payments & Media
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **Razorpay** | 2.9.5 | Payment gateway |
-| **Cloudinary** | 2.5.1 | Image hosting/optimization |
+| **Razorpay** | 2.9.5 | Payment gateway and refunds |
+| **Cloudinary** | 2.5.1 | Media upload and hosting |
 
 ### Tools & Utilities
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | **Zod** | 3.23.8 | Runtime validation |
 | **TipTap** | 2.9.1 | Rich text editor |
-| **Recharts** | 2.12.7 | Data visualization |
-| **React Hook Form** | 7.53.2 | Form management |
-| **Lucide Icons** | 0.453.0 | Icon library |
-| **BCryptjs** | 2.4.3 | Password hashing |
+| **Recharts** | 2.12.7 | Charts and analytics |
+| **React Hook Form** | 7.53.2 | Form handling |
+| **Lucide React** | 0.453.0 | Icon library |
+| **bcryptjs** | 2.4.3 | Password hashing |
+| **Redis** | 5.11.0 | Optional rate-limit backing store |
 
 ---
 
@@ -108,9 +112,16 @@ Whether you're launching a small boutique or scaling to enterprise level, this p
 Before running this project, make sure you have:
 
 - **Node.js** 18+ ([Download](https://nodejs.org/))
-- **MongoDB** - Local installation or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account
-- **Git** for version control
-- **npm** or **yarn** package manager
+- **MongoDB** local or hosted via [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- **npm** package manager
+- **Google OAuth credentials**
+- **Razorpay account**
+- **Cloudinary account**
+- **SMTP credentials**
+
+Optional:
+
+- **Redis** for persistent rate limiting
 
 ---
 
@@ -119,22 +130,26 @@ Before running this project, make sure you have:
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-username/ecom.git
-cd ecom
+git clone https://github.com/Shubham-Guptaji/Ecommerce_Web_Application.git
+cd Ecommerce_Web_Application
 ```
 
 ### 2. Install Dependencies
 
 ```bash
 npm install
-# or
-yarn install
 ```
 
 ### 3. Environment Configuration
 
 ```bash
 cp .env.local.example .env.local
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.local.example .env.local
 ```
 
 Edit `.env.local` and fill in your credentials:
@@ -147,7 +162,7 @@ MONGODB_URI=mongodb://localhost:27017/ecom
 NEXTAUTH_SECRET=your-secret-key-here-minimum-32-characters
 NEXTAUTH_URL=http://localhost:3000
 
-# Google OAuth (Optional)
+# Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
@@ -160,17 +175,25 @@ RAZORPAY_WEBHOOK_SECRET=your-webhook-secret
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
+# CLOUDINARY_UPLOAD_FOLDER=ecommerce
+# CLOUDINARY_UPLOAD_PRESET=your-upload-preset
 
 # Email (SMTP - Brevo/SendGrid/etc.)
 SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
-SMTP_USER=your-email@example.com
+SMTP_USER=your-smtp-user
 SMTP_PASS=your-smtp-password
 SMTP_FROM=no-reply@yourdomain.com
 
-# App Settings (Optional)
-NEXT_PUBLIC_APP_NAME=E-Shop
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# Redis (Optional)
+# REDIS_URL=redis://default:password@localhost:6379/0
+# REDIS_HOST=localhost
+# REDIS_PORT=6379
+# REDIS_USERNAME=default
+# REDIS_PASSWORD=your-redis-password
+# REDIS_DB=0
+# REDIS_TLS=false
+# REDIS_KEY_PREFIX=ecom
 ```
 
 ### 4. External Service Setup
@@ -179,7 +202,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 1. Log in to [Cloudinary](https://cloudinary.com/)
 2. Copy your **Cloud Name**, **API Key**, and **API Secret** into `.env.local`
 3. Optional: set `CLOUDINARY_UPLOAD_FOLDER` if you want uploads grouped under a custom folder
-4. Optional: set `CLOUDINARY_UPLOAD_PRESET` only if your Cloudinary account is configured to require preset-based rules
+4. Optional: set `CLOUDINARY_UPLOAD_PRESET` only if your account uses preset-based rules
 
 #### Razorpay Setup
 1. Sign up at [Razorpay](https://razorpay.com/)
@@ -189,11 +212,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
    - Events: `payment.captured`, `payment.failed`, `refund.processed`
    - Secret: Set webhook secret in `.env.local`
 
-#### Google OAuth (Optional)
+#### Google OAuth Setup
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project → Credentials → OAuth 2.0 Client ID
-3. Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+2. Create a project and generate an OAuth 2.0 Client ID
+3. Add redirect URI: `http://localhost:3000/api/auth/callback/google`
 4. Add credentials to `.env.local`
+
+#### Redis Setup (Optional)
+1. Provide either `REDIS_URL` or host-based Redis variables
+2. If Redis is not configured, the app still runs
+3. Rate limiting will fall back to a non-persistent mode
 
 ### 5. Seed Database
 
@@ -203,9 +231,9 @@ npm run seed
 
 This creates sample data:
 - **5 categories** (Electronics, Clothing, Books, Home & Kitchen, Sports)
-- **20 sample products** with images
-- **2 coupon codes** (SAVE10, FLAT100)
-- **1 admin user**:
+- **20 sample products**
+- **2 coupon codes** (`SAVE10`, `FLAT100`)
+- **1 admin user**
   - Email: `admin@example.com`
   - Password: `Admin@123`
 
@@ -221,267 +249,162 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📁 Project Structure
 
-```
+```text
 ecom/
 ├── src/
 │   ├── app/                      # Next.js App Router
-│   │   ├── (auth)/              # Authentication routes (grouped)
-│   │   │   ├── forgot-password/
-│   │   │   ├── reset-password/
-│   │   │   ├── sign-in/
-│   │   │   ├── sign-up/
-│   │   │   └── verify-email/
-│   │   ├── (store)/             # Store front routes
+│   │   ├── (auth)/               # Sign-in, sign-up, forgot/reset password, verify email
+│   │   ├── (store)/              # Storefront routes
+│   │   │   ├── about/
 │   │   │   ├── cart/
 │   │   │   ├── categories/
+│   │   │   ├── category/[slug]/
 │   │   │   ├── checkout/
+│   │   │   ├── contact/
+│   │   │   ├── faq/
 │   │   │   ├── orders/
+│   │   │   ├── payment/
 │   │   │   ├── products/
-│   │   │   └── profile/
-│   │   ├── admin/              # Admin panel routes
+│   │   │   ├── profile/
+│   │   │   ├── returns/
+│   │   │   ├── terms/
+│   │   │   ├── track-order/
+│   │   │   └── wishlist/
+│   │   ├── admin/                # Admin dashboard routes
 │   │   │   ├── categories/
 │   │   │   ├── coupons/
+│   │   │   ├── newsletter/
 │   │   │   ├── orders/
 │   │   │   ├── products/
 │   │   │   ├── settings/
 │   │   │   └── users/
-│   │   ├── api/                # API route handlers
+│   │   ├── api/                  # API route handlers
+│   │   │   ├── admin/
 │   │   │   ├── auth/
 │   │   │   ├── cart/
 │   │   │   ├── categories/
 │   │   │   ├── coupons/
+│   │   │   ├── health/
+│   │   │   ├── newsletter/
 │   │   │   ├── orders/
 │   │   │   ├── payment/
 │   │   │   ├── products/
-│   │   │   ├── reviews/
+│   │   │   ├── track-order/
 │   │   │   ├── upload/
 │   │   │   └── user/
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
+│   │   └── maintenance/
 │   ├── components/
-│   │   ├── ui/                 # shadcn/ui components
-│   │   ├── layout/             # Navbar, Footer, Sidebar
-│   │   ├── product/            # Product cards, gallery, etc.
-│   │   ├── cart/               # Cart drawer, item cards
-│   │   ├── checkout/           # Checkout wizard
-│   │   ├── admin/              # Admin panel components
-│   │   └── shared/             # Reusable utilities
+│   │   ├── admin/
+│   │   ├── cart/
+│   │   ├── category/
+│   │   ├── checkout/
+│   │   ├── editor/
+│   │   ├── layout/
+│   │   ├── product/
+│   │   ├── providers/
+│   │   ├── shared/
+│   │   └── ui/
+│   ├── hooks/
 │   ├── lib/
-│   │   ├── db.ts               # MongoDB connection
-│   │   ├── auth.ts             # NextAuth configuration
-│   │   ├── nodemailer.ts       # Email service setup
-│   │   ├── cloudinary.ts       # Cloudinary client
-│   │   ├── razorpay.ts         # Razorpay instance
-│   │   └── utils.ts            # Helper functions
-│   ├── models/                 # Mongoose schemas
-│   │   ├── User.ts
-│   │   ├── Product.ts
-│   │   ├── Category.ts
-│   │   ├── Order.ts
-│   │   ├── Cart.ts
-│   │   ├── Coupon.ts
-│   │   └── Review.ts
-│   ├── hooks/                  # Custom React hooks
-│   │   ├── useCart.ts
-│   │   ├── useLocalStorage.ts
-│   │   └── useMediaQuery.ts
-│   ├── store/                  # Redux Toolkit
-│   │   ├── index.ts
-│   │   ├── slices/
-│   │   │   ├── cartSlice.ts
-│   │   │   └── uiSlice.ts
-│   ├── types/                  # TypeScript definitions
-│   │   ├── product.ts
-│   │   ├── order.ts
-│   │   └── user.ts
-│   ├── schemas/                # Zod validation
+│   │   ├── emails/
 │   │   ├── auth.ts
-│   │   ├── product.ts
-│   │   ├── order.ts
-│   │   └── user.ts
-│   └── emails/                 # HTML email templates
-│       ├── verification.tsx
-│       ├── welcome.tsx
-│       ├── order-confirmation.tsx
-│       └── password-reset.tsx
-├── public/                     # Static assets
-│   ├── images/
-│   └── favicon.ico
-├── .env.local.example          # Environment template
-├── next.config.js              # Next.js configuration
-├── tailwind.config.ts          # Tailwind setup
-├── tsconfig.json               # TypeScript config
-├── components.json             # shadcn/ui config
-└── package.json                # Dependencies
+│   │   ├── db.ts
+│   │   ├── env.ts
+│   │   ├── newsletter.ts
+│   │   ├── nodemailer.ts
+│   │   ├── ratelimit.ts
+│   │   ├── razorpay.ts
+│   │   └── utils.ts
+│   ├── models/
+│   ├── schemas/
+│   ├── store/
+│   └── types/
+├── scripts/
+│   └── seed.ts
+├── .env.local.example
+├── next.config.js
+├── tailwind.config.ts
+├── tsconfig.json
+├── vercel.json
+└── package.json
 ```
 
 ---
 
 ## 💻 Usage Examples
 
-### Create a New Product (Admin API)
+### Fetch Products with Filters
 
 ```typescript
-// POST /api/products
-const response = await fetch('/api/products', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    name: 'Sample Product',
-    price: 99.99,
-    category: 'electronics',
-    description: 'Product description',
-    stock: 100,
-    images: ['cloudinary-image-url'],
-  }),
-});
+const response = await fetch(
+  '/api/products?category=electronics&sortBy=price&sortOrder=asc&page=1&limit=12'
+)
+
+const data = await response.json()
+console.log(data.data)
 ```
 
 ### Add Item to Cart
 
 ```typescript
-import { useDispatch } from 'react-redux';
-import { addItem } from '@/store/slices/cartSlice';
+import { useDispatch } from 'react-redux'
+import { addItem } from '@/store/slices/cartSlice'
 
-function ProductPage() {
-  const dispatch = useDispatch();
+function ProductPage({ product }: { product: { _id: string; price: number } }) {
+  const dispatch = useDispatch()
 
-  const handleAddToCart = (product) => {
-    dispatch(addItem({
-      productId: product._id,
-      quantity: 1,
-      price: product.price,
-    }));
-  };
+  const handleAddToCart = () => {
+    dispatch(
+      addItem({
+        productId: product._id,
+        quantity: 1,
+        price: product.price,
+      })
+    )
+  }
 
-  return <button onClick={() => handleAddToCart(product)}>Add to Cart</button>;
+  return <button onClick={handleAddToCart}>Add to Cart</button>
 }
 ```
 
 ### Checkout with Razorpay
 
 ```typescript
-// 1. Create order
-const { orderId, amount } = await fetch('/api/payment/create-order', {
+const result = await fetch('/api/payment/create-order', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ amount, currency: 'INR' }),
-}).then(res => res.json());
+  body: JSON.stringify({
+    addressId: 'address-id',
+    deliveryMethod: 'standard',
+    couponCode: 'SAVE10',
+  }),
+}).then((res) => res.json())
 
-// 2. Initialize Razorpay
 const options = {
-  key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-  amount: amount * 100, // in paise
-  currency: 'INR',
-  name: 'E-Shop',
-  description: 'Order Payment',
-  orderId: orderId,
-  handler: async (response) => {
-    // 3. Verify payment
+  key: result.data.key,
+  amount: result.data.amount * 100,
+  currency: result.data.currency,
+  name: result.data.name,
+  description: result.data.description,
+  order_id: result.data.razorpayOrderId,
+  prefill: result.data.prefill,
+  handler: async (response: any) => {
     await fetch('/api/payment/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_signature: response.razorpay_signature,
+        orderId: result.data.orderId,
+        razorpayOrderId: response.razorpay_order_id,
+        razorpayPaymentId: response.razorpay_payment_id,
+        razorpaySignature: response.razorpay_signature,
       }),
-    });
+    })
   },
-};
-const razorpay = new window.Razorpay(options);
-razorpay.open();
+}
+
+const razorpay = new (window as any).Razorpay(options)
+razorpay.open()
 ```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from the community! Follow these steps to get started:
-
-### Development Workflow
-
-1. **Fork** the repository
-2. **Clone** your fork:
-   ```bash
-   git clone https://github.com/your-username/ecom.git
-   cd ecom
-   ```
-3. **Create a branch**:
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-4. **Make changes** and follow our coding standards
-5. **Lint and format**:
-   ```bash
-   npm run lint
-   npm run type-check
-   ```
-6. **Commit** with clear messages:
-   ```bash
-   git commit -m "feat: add new admin dashboard widget"
-   ```
-7. **Push** to your branch:
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-8. **Open a Pull Request** with detailed description
-
-### Guidelines
-
-- Follow TypeScript strict mode
-- Use existing component patterns from `src/components/ui`
-- Write tests for new features (if test files exist)
-- Ensure code passes linting and type checking
-- Update documentation for API changes
-- Keep commits atomic and descriptive
-
-
----
-
-## 🔒 Security
-
-This application implements multiple security layers:
-
-- **Authentication**: NextAuth.js with secure session management
-- **Authorization**: Role-based middleware on admin routes
-- **Password Security**: bcryptjs with 12 salt rounds
-- **Payment Security**: Razorpay signature verification
-- **Input Validation**: Zod schemas on all API endpoints
-- **CSRF Protection**: Built-in NextAuth CSRF tokens
-- **CSP Headers**: Content Security Policy configured
-- **Rate Limiting**: Recommended for auth endpoints (needs setup)
-
-**Responsible Disclosure**: If you find a security vulnerability, please email `security@yourdomain.com` instead of opening a public issue.
-
----
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/ecom)
-
-1. Push code to GitHub
-2. Import project in [Vercel](https://vercel.com)
-3. Configure environment variables
-4. Deploy automatically on push
-
-### Manual VPS Deployment
-
-```bash
-# Build production bundle
-npm run build
-
-# Start production server
-npm start
-
-# Or use PM2 for process management
-pm2 start npm --name "ecom" -- start
-```
-
-**Important**: Configure reverse proxy (nginx) and SSL certificate for production.
 
 ---
 
@@ -493,27 +416,32 @@ pm2 start npm --name "ecom" -- start
 |--------|----------|-------------|
 | `POST` | `/api/auth/register` | User registration |
 | `POST` | `/api/auth/forgot-password` | Request password reset |
-| `POST` | `/api/auth/reset-password/[token]` | Reset password |
-| `GET` | `/api/auth/verify/[token]` | Email verification |
+| `POST` | `/api/auth/reset-password` | Reset password using token in request body |
+| `GET` | `/api/auth/verify-email?token=...` | Email verification |
+| `POST` | `/api/auth/resend-verification` | Resend verification email |
 
 ### Product Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/products` | List products with filters |
-| `GET` | `/api/products/[slug]` | Get product details |
-| `POST` | `/api/products` | Create product (admin) |
-| `PUT` | `/api/products/[id]` | Update product (admin) |
-| `DELETE` | `/api/products/[id]` | Delete product (admin) |
+| `GET` | `/api/products` | List products with filters and pagination |
+| `POST` | `/api/products` | Create product |
+| `GET` | `/api/products/by-slug/[slug]` | Get product details by slug |
+| `GET` | `/api/products/[id]` | Get product details by ID |
+| `PUT` | `/api/products/[id]` | Update product |
+| `DELETE` | `/api/products/[id]` | Delete product |
 
 ### Order Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/orders` | Get user orders |
+| `GET` | `/api/orders` | Get current user orders |
+| `POST` | `/api/orders` | Create COD order |
 | `GET` | `/api/orders/[id]` | Get order details |
-| `POST` | `/api/orders` | Create order |
-| `PUT` | `/api/orders/[id]` | Update order status (admin) |
+| `DELETE` | `/api/orders/[id]` | Cancel order when eligible |
+| `POST` | `/api/orders/[id]/cancel` | Cancel order through dedicated action |
+| `POST` | `/api/orders/[id]/return` | Request return/refund |
+| `GET` | `/api/orders/[id]/invoice` | Download invoice |
 
 ### Payment Endpoints
 
@@ -521,71 +449,142 @@ pm2 start npm --name "ecom" -- start
 |--------|----------|-------------|
 | `POST` | `/api/payment/create-order` | Create Razorpay order |
 | `POST` | `/api/payment/verify` | Verify payment signature |
+| `POST` | `/api/payment/cod` | Create Cash on Delivery order |
 | `POST` | `/api/payment/webhook` | Razorpay webhook handler |
+| `POST` | `/api/payment/refund/[id]` | Refund eligible order |
 
-For full API documentation, see [API.md](API.md).
+### Utility Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/categories` | List categories |
+| `POST` | `/api/coupons/validate` | Validate coupon code |
+| `POST` | `/api/newsletter/subscribe` | Subscribe to newsletter |
+| `GET` | `/api/newsletter/unsubscribe` | Unsubscribe from newsletter |
+| `POST` | `/api/track-order` | Track order by details |
+| `GET` | `/api/health` | Health check |
 
 ---
 
-## 🧪 Testing
+## 🧪 Scripts & Checks
 
 ```bash
+# Start development
+npm run dev
+
+# Build production bundle
+npm run build
+
+# Start production server
+npm run start
+
 # Lint code
 npm run lint
 
 # Type checking
 npm run type-check
 
-# Run all checks
-npm run lint && npm run type-check
+# Seed sample data
+npm run seed
 ```
+
+Note: the current `lint` script runs ESLint with `--fix`.
 
 ---
 
-## 📸 Screenshots
+## 🤝 Contributing
 
-### Store Front
-![Store Homepage](screenshots/store-homepage.png)
-*Hero section with featured products and categories*
+We welcome contributions from the community. A good workflow is:
 
-### Product Details
-![Product Page](screenshots/product-details.png)
-*Rich product pages with image gallery and reviews*
+1. Fork the repository
+2. Clone your fork
+3. Create a feature branch
+4. Make focused changes
+5. Run `npm run lint` and `npm run type-check`
+6. Commit with clear messages
+7. Push and open a pull request
 
-### Admin Dashboard
-![Admin Dashboard](screenshots/admin-dashboard.png)
-*Analytics with revenue charts and top products*
+Guidelines:
 
-### Admin Product Management
-![Admin Products](screenshots/admin-products.png)
-*Product CRUD with bulk actions and image upload*
+- Follow existing TypeScript and component conventions
+- Reuse patterns from `src/components/ui` and existing app routes
+- Keep documentation updated when API behavior changes
+- Keep commits small and intentional
 
+---
+
+## 🔒 Security
+
+This application includes multiple security layers:
+
+- **Authentication** - NextAuth.js with session management
+- **Authorization** - Admin-only protection for sensitive routes
+- **Password Security** - bcrypt hashing
+- **Payment Security** - Razorpay signature verification
+- **Input Validation** - Zod schemas on key endpoints
+- **CSRF Protection** - Applied on sensitive order/payment actions
+- **Rate Limiting** - Redis-backed rate limiting when configured
+- **Operational Control** - Maintenance mode support for storefront lockdown
+
+If you discover a security issue, please disclose it responsibly instead of posting public exploit details.
+
+---
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/)
+
+1. Push code to GitHub
+2. Import the project into [Vercel](https://vercel.com/)
+3. Configure all required environment variables
+4. Deploy and set your production domain
+5. Update `NEXTAUTH_URL` and payment webhook settings
+
+### Manual Deployment
+
+```bash
+npm run build
+npm run start
+```
+
+For VPS deployments, configure:
+
+- Reverse proxy such as Nginx
+- SSL certificate
+- Environment variables
+- Process manager such as PM2, if desired
+
+---
 
 ## 📝 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **[shadcn/ui](https://ui.shadcn.com/)** - Beautiful, accessible components
+- **[Next.js](https://nextjs.org/)** - Full-stack React framework
+- **[shadcn/ui](https://ui.shadcn.com/)** - Accessible, composable UI components
 - **[Vercel](https://vercel.com/)** - Hosting and deployment platform
-- **[Tailwind CSS](https://tailwindcss.com/)** - Amazing utility-first CSS framework
-- **[Razorpay](https://razorpay.com/)** - Reliable payment gateway for India
-- **[Cloudinary](https://cloudinary.com/)** - Powerful media management
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Razorpay](https://razorpay.com/)** - Payment gateway
+- **[Cloudinary](https://cloudinary.com/)** - Media management
 - **[MongoDB](https://www.mongodb.com/)** - Flexible document database
 
 ---
 
 ## 📞 Support
 
-- **Email**: support@gravityscript.com
+- **Project URL**: [https://store.gravityscript.com](https://store.gravityscript.com)
+
 ---
 
 <div align="center">
 
-Built with ❤️ using modern web technologies
+Built with care using modern web technologies
 
 [Next.js](https://nextjs.org/) • [React](https://reactjs.org/) • [TypeScript](https://www.typescriptlang.org/) • [MongoDB](https://www.mongodb.com/) • [Tailwind CSS](https://tailwindcss.com/)
 

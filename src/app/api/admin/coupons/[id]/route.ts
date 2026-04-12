@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ZodError } from 'zod'
 import Coupon from '@/models/Coupon'
+import { createCouponSchema } from '@/schemas'
 import { requireAdmin } from '@/lib/adminAuth'
 
 export async function GET(
@@ -43,11 +45,22 @@ export async function PUT(
     if (error) return error
 
     const body = await request.json()
-    const { code, type, value, minOrderValue, maxDiscount, usageLimit, expiresAt, isActive } = body
+    const parsed = createCouponSchema.partial().parse(body)
+    const { code, type, value, minOrderValue, maxDiscount, usageLimit, expiresAt, isActive } = parsed
 
     const updateData: any = {}
 
-    if (code) updateData.code = code.toUpperCase()
+    if (code) {
+      const normalizedCode = code.toUpperCase()
+      const existing = await Coupon.findOne({ code: normalizedCode, _id: { $ne: id } }).lean()
+      if (existing) {
+        return NextResponse.json(
+          { success: false, message: 'Coupon code already exists' },
+          { status: 400 }
+        )
+      }
+      updateData.code = normalizedCode
+    }
     if (type) updateData.type = type
     if (value !== undefined) updateData.value = value
     if (minOrderValue !== undefined) updateData.minOrderValue = minOrderValue
@@ -73,8 +86,16 @@ export async function PUT(
       success: true,
       data: coupon,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Admin coupon PUT error:', error)
+
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { success: false, message: 'Validation error', errors: error.issues },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { success: false, message: 'Failed to update coupon' },
       { status: 500 }

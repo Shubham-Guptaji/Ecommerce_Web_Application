@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import { auth } from '@/lib/auth'
-import { signOut } from 'next-auth/react'
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -16,6 +15,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     await dbConnect()
+
+    if (session.user.role === 'admin') {
+      return NextResponse.json(
+        { success: false, message: 'Admin accounts cannot delete themselves.' },
+        { status: 403 }
+      )
+    }
 
     // Anonymize user data but keep orders intact
     const anonData = {
@@ -39,9 +45,6 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       )
     }
-
-    // Sign out the user
-    await signOut({ redirect: false })
 
     return NextResponse.json({
       success: true,

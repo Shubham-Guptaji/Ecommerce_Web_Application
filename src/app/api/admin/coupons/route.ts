@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ZodError } from 'zod'
 import Coupon from '@/models/Coupon'
 import { createCouponSchema } from '@/schemas'
 import { requireAdmin } from '@/lib/adminAuth'
@@ -59,9 +60,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Admin coupons POST error:', error)
 
-    if (error.errors) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { success: false, message: 'Validation error', errors: error.errors },
+        { success: false, message: 'Validation error', errors: error.issues },
         { status: 400 }
       )
     }

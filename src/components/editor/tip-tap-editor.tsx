@@ -25,11 +25,29 @@ interface ToolbarProps {
   editor: Editor
 }
 
+const normalizeEditorUrl = (input: string) => {
+  const value = input.trim()
+
+  if (!value) return null
+
+  if (/^(https?:|mailto:|tel:|\/|#)/i.test(value)) {
+    return value
+  }
+
+  if (/^www\./i.test(value) || /^[^\s]+\.[^\s]+$/.test(value)) {
+    return `https://${value}`
+  }
+
+  return value
+}
+
 const Toolbar = ({ editor }: ToolbarProps) => {
   const handleAddLink = () => {
-    const url = prompt('Enter URL:')
+    const input = prompt('Enter URL:')
+    const url = input ? normalizeEditorUrl(input) : null
+
     if (url) {
-      editor.chain().focus().setLink({ href: url }).run()
+      editor.chain().focus().setLink({ href: url, target: '_blank' }).run()
     }
   }
 
@@ -226,7 +244,7 @@ export function TipTapEditor({
   return (
     <div className="border rounded-md overflow-hidden">
       <Toolbar editor={editor} />
-      <div className="p-4 min-h-[300px] max-h-[500px] overflow-y-auto">
+      <div className="product-rich-text p-4 min-h-[300px] max-h-[500px] overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
     </div>

@@ -44,15 +44,22 @@ export default function SignInPage() {
   })
 
   useEffect(() => {
-    if (error !== 'maintenance_mode') {
+    if (error === 'maintenance_mode') {
+      toast({
+        title: 'Maintenance mode is active',
+        description: 'Only admin accounts can sign in while the storefront is under maintenance.',
+        variant: 'destructive',
+      })
       return
     }
 
-    toast({
-      title: 'Maintenance mode is active',
-      description: 'Only admin accounts can sign in while the storefront is under maintenance.',
-      variant: 'destructive',
-    })
+    if (error === 'inactive') {
+      toast({
+        title: 'Account deactivated',
+        description: 'This account has been deactivated. Please contact support for help.',
+        variant: 'destructive',
+      })
+    }
   }, [error])
 
   const onSubmit = async (data: SignInForm) => {
@@ -82,6 +89,12 @@ export default function SignInPage() {
           toast({
             title: 'Email not verified',
             description: 'Please verify your email before logging in.',
+            variant: 'destructive',
+          })
+        } else if (result.code === 'inactive' || result.error === 'inactive') {
+          toast({
+            title: 'Account deactivated',
+            description: 'This account has been deactivated. Please contact support for help.',
             variant: 'destructive',
           })
         } else if (result.error === 'CredentialsSignin') {

@@ -12,7 +12,7 @@ import {
 } from 'recharts'
 
 interface TopProductsChartProps {
-  data: Array<{ name: string; revenue: number }>
+  data: Array<{ name: string; sold: number }>
 }
 
 export function TopProductsChart({ data }: TopProductsChartProps) {
@@ -22,8 +22,8 @@ export function TopProductsChart({ data }: TopProductsChartProps) {
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis type="number" tick={{ fontSize: 12 }} />
         <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={100} />
-        <Tooltip />
-        <Bar dataKey="revenue" fill="#10b981" />
+        <Tooltip formatter={(value: number) => [`${value} sold`, 'Units Sold']} />
+        <Bar dataKey="sold" fill="#10b981" />
       </BarChart>
     </ResponsiveContainer>
   )

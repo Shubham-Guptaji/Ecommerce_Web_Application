@@ -127,7 +127,7 @@ export default function AdminDashboard() {
     })),
     topProducts: (productsAnalytics.topProducts || []).map((item: any) => ({
       name: item.name,
-      revenue: item.revenue,
+      sold: item.quantitySold,
     })),
     revenueByCategory: (productsAnalytics.revenueByCategory || []).map((item: any) => ({
       name: item.categoryName || 'Uncategorized',
@@ -243,7 +243,7 @@ export default function AdminDashboard() {
         {/* Top Products */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Selling Products</CardTitle>
+            <CardTitle>Top Selling Products This Week</CardTitle>
           </CardHeader>
           <CardContent>
             <TopProductsChart data={stats.topProducts} />

@@ -4,13 +4,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import Order from '@/models/Order'
 import Cart from '@/models/Cart'
-import Product from '@/models/Product'
 import Coupon from '@/models/Coupon'
 import Address from '@/models/Address'
 import User from '@/models/User'
 import Counter from '@/models/Counter'
 import { auth } from '@/lib/auth'
 import { sendOrderConfirmationEmail } from '@/lib/emails'
+import { decrementInventory } from '@/lib/inventory'
 
 export async function POST(request: NextRequest) {
   try {
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }, 0)
 
     let couponDiscount = 0
-    let couponData = null
+    let couponId = null
 
     // Apply coupon if provided
     if (couponCode) {
@@ -116,13 +116,7 @@ export async function POST(request: NextRequest) {
         }
 
         couponDiscount = coupon.calculateDiscount(subtotal)
-
-        couponData = {
-          code: coupon.code,
-          type: coupon.type,
-          value: coupon.value,
-          discountAmount: couponDiscount,
-        }
+        couponId = coupon._id
       }
     }
 
@@ -201,7 +195,7 @@ export async function POST(request: NextRequest) {
         tax,
         total,
       },
-      coupon: couponData,
+      coupon: couponId,
       notes,
       expectedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days
       statusHistory: [
@@ -215,19 +209,27 @@ export async function POST(request: NextRequest) {
 
     await order.save()
 
-    // Reduce stock
-    for (const item of cart.items) {
-      const product = item.product as any
-      const productId = product._id
-      const quantity = item.quantity
-      await Product.findByIdAndUpdate(productId, {
-        $inc: { stock: -quantity, soldCount: quantity },
-      })
+    try {
+      await decrementInventory(
+        cart.items.map((item: any) => ({
+          product: item.product._id,
+          quantity: item.quantity,
+        }))
+      )
+    } catch (inventoryError) {
+      await Order.findByIdAndDelete(order._id)
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'One or more products went out of stock before the order could be confirmed',
+        },
+        { status: 409 }
+      )
     }
 
     // Update coupon usage if applied
     if (order.coupon) {
-      await Coupon.findByIdAndUpdate(order.coupon._id, {
+      await Coupon.findByIdAndUpdate(order.coupon, {
         $inc: { usedCount: 1 },
         $push: { usedBy: session.user.id },
       })

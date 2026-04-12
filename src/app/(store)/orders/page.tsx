@@ -188,7 +188,7 @@ export default function OrdersPage() {
 
   const tabs = [
     { id: 'all', label: 'All' },
-    { id: 'pending', label: 'Active' },
+    { id: 'active', label: 'Active' },
     { id: 'delivered', label: 'Delivered' },
     { id: 'cancelled', label: 'Cancelled' },
   ]

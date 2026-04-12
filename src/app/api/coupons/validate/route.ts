@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ZodError } from 'zod'
 import { dbConnect } from '@/lib/db'
 import Coupon from '@/models/Coupon'
 import { auth } from '@/lib/auth'
@@ -71,9 +72,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Coupon validate error:', error)
 
-    if (error.errors) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { success: false, message: 'Validation error', errors: error.errors },
+        { success: false, message: 'Validation error', errors: error.issues },
         { status: 400 }
       )
     }

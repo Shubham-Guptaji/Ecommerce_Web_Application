@@ -4,11 +4,11 @@ import crypto from 'crypto'
 import { dbConnect } from '@/lib/db'
 import Order from '@/models/Order'
 import Cart from '@/models/Cart'
-import Product from '@/models/Product'
 import Coupon from '@/models/Coupon'
 import { auth } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { sendOrderConfirmationEmail } from '@/lib/emails'
+import { decrementInventory } from '@/lib/inventory'
 import { paymentVerifySchema } from '@/schemas'
 
 export async function POST(request: NextRequest) {
@@ -93,9 +93,9 @@ export async function POST(request: NextRequest) {
       ? orders.find((order: any) => order._id.toString() === orderId) || orders[0]
       : orders[0]
 
-    const unpaidOrders = orders.filter((order: any) => order.paymentInfo.status !== 'paid')
+    const pendingOrders = orders.filter((order: any) => order.paymentInfo.status !== 'paid')
 
-    if (unpaidOrders.length === 0) {
+    if (pendingOrders.length === 0) {
       return NextResponse.json({
         success: true,
         data: {
@@ -107,40 +107,52 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    for (const order of unpaidOrders) {
-      order.paymentInfo.razorpayPaymentId = razorpayPaymentId
-      order.paymentInfo.razorpaySignature = razorpaySignature
-      order.paymentInfo.status = 'paid'
+    for (const order of pendingOrders) {
+      const claimedOrder = await Order.findOneAndUpdate(
+        {
+          _id: order._id,
+          'paymentInfo.status': { $ne: 'paid' },
+        },
+        {
+          $set: {
+            'paymentInfo.razorpayPaymentId': razorpayPaymentId,
+            'paymentInfo.razorpaySignature': razorpaySignature,
+            'paymentInfo.status': 'paid',
+            status: 'confirmed',
+          },
+          $push: {
+            statusHistory: {
+              status: 'confirmed',
+              timestamp: new Date(),
+              note: 'Payment confirmed',
+            },
+          },
+        },
+        { new: true }
+      )
 
-      order.status = 'confirmed'
-      order.statusHistory.push({
-        status: 'confirmed',
-        timestamp: new Date(),
-        note: 'Payment confirmed',
-      })
-
-      for (const item of order.items) {
-        const product = item.product as any
-        const productId = product._id
-        const quantity = item.quantity
-
-        await Product.findByIdAndUpdate(productId, {
-          $inc: { stock: -quantity, soldCount: quantity },
-        })
+      if (!claimedOrder) {
+        continue
       }
 
+      await decrementInventory(
+        claimedOrder.items.map((item: any) => ({
+          product: item.product,
+          quantity: item.quantity,
+        }))
+      )
+
       if (order.coupon) {
-        await Coupon.findByIdAndUpdate(order.coupon._id, {
+        const couponId = (order.coupon as any)._id || order.coupon
+        await Coupon.findByIdAndUpdate(couponId, {
           $inc: { usedCount: 1 },
           $push: { usedBy: session.user.id },
         })
       }
 
-      await order.save()
-
       try {
         if (order.user?.email) {
-          sendOrderConfirmationEmail(order, order.user)
+          sendOrderConfirmationEmail(claimedOrder, order.user)
         }
       } catch (emailError) {
         console.error('Failed to send confirmation email:', emailError)

@@ -11,6 +11,17 @@ interface CouponsState {
   error: string | null
 }
 
+type CouponPayload = {
+  code: string
+  type: 'flat' | 'percentage'
+  value: number
+  minOrderValue: number
+  maxDiscount?: number | null
+  usageLimit: number
+  expiresAt: string
+  isActive: boolean
+}
+
 const initialState: CouponsState = {
   coupons: [],
   appliedCoupon: null,
@@ -34,11 +45,9 @@ export const fetchCoupons = createAsyncThunk(
 // Create coupon (admin)
 export const createCoupon = createAsyncThunk(
   'coupons/create',
-  async (couponData: FormData, { rejectWithValue }) => {
+  async (couponData: CouponPayload, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post('/api/admin/coupons', couponData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const response = await axiosInstance.post('/api/admin/coupons', couponData)
       return response.data
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -50,13 +59,11 @@ export const createCoupon = createAsyncThunk(
 export const updateCoupon = createAsyncThunk(
   'coupons/update',
   async (
-    { id, couponData }: { id: string; couponData: FormData },
+    { id, couponData }: { id: string; couponData: CouponPayload },
     { rejectWithValue }
   ) => {
     try {
-      const response = await axiosInstance.put(`/api/admin/coupons/${id}`, couponData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const response = await axiosInstance.put(`/api/admin/coupons/${id}`, couponData)
       return response.data
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -80,9 +87,15 @@ export const deleteCoupon = createAsyncThunk(
 // Validate and apply coupon
 export const validateCoupon = createAsyncThunk(
   'coupons/validate',
-  async (code: string, { rejectWithValue }) => {
+  async (
+    { code, orderTotal }: { code: string; orderTotal: number },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await axiosInstance.post('/api/coupons/validate', { code })
+      const response = await axiosInstance.post('/api/coupons/validate', {
+        code,
+        orderTotal,
+      })
       return response.data
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Invalid coupon code')

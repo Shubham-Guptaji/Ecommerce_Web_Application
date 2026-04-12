@@ -1,5 +1,6 @@
 // src/app/api/admin/categories/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { dbConnect } from '@/lib/db'
 import Category from '@/models/Category'
 import Product from '@/models/Product'
 import { z } from 'zod'
@@ -20,6 +21,7 @@ export async function GET(
     const { id } = await params
     const { session, error } = await requireAdmin()
     if (error) return error
+    await dbConnect()
 
     const category = await Category.findById(id)
       .populate('parent', 'name slug')
@@ -60,6 +62,7 @@ export async function PUT(
     const { id } = await params
     const { session, error } = await requireAdmin()
     if (error) return error
+    await dbConnect()
 
     const body = await request.json()
     const { name, description, parent, isActive, imageUrl, imagePublicId } = body
@@ -128,11 +131,10 @@ export async function PUT(
       }
     }
 
-    const category = await Category.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    )
+    const category = await Category.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    }).populate('parent', 'name slug')
 
     return NextResponse.json({
       success: true,
@@ -163,6 +165,7 @@ export async function DELETE(
     const { id } = await params
     const { session, error } = await requireAdmin()
     if (error) return error
+    await dbConnect()
 
     const category = await Category.findById(id)
 

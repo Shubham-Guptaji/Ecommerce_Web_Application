@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import Order from '@/models/Order'
-import Category from '@/models/Category'
-import { auth } from '@/lib/auth'
 import { requireAdmin } from '@/lib/adminAuth'
 
 export async function GET() {
   try {
     const { session, error } = await requireAdmin()
     if (error) return error
+
+    await dbConnect()
 
     // Get paid orders in the last 30 days (or all time)
     const thirtyDaysAgo = new Date()
@@ -17,7 +17,9 @@ export async function GET() {
     const pipeline: any[] = [
       {
         $match: {
-          'paymentInfo.status': 'paid',
+          status: {
+            $in: ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'],
+          },
           createdAt: { $gte: thirtyDaysAgo },
         },
       },
@@ -42,7 +44,8 @@ export async function GET() {
       { $unwind: { path: 'categoryDetail', preserveNullAndEmptyArrays: true } },
       {
         $group: {
-          _id: '$categoryDetail.name',
+          _id: '$categoryDetail._id',
+          name: { $first: '$categoryDetail.name' },
           revenue: { $sum: '$items.subtotal' },
         },
       },
@@ -53,9 +56,9 @@ export async function GET() {
 
     // Format as array for pie chart
     const revenueByCategory = result
-      .filter((item) => item._id) // Remove uncategorized
+      .filter((item) => item._id)
       .map((item) => ({
-        name: item._id,
+        name: item.name,
         value: item.revenue,
       }))
 

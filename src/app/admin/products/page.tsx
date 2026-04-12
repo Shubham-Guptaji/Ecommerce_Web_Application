@@ -70,8 +70,8 @@ export default function AdminProductsPage() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('')
-  const [categoryFilter, setCategoryFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [categories, setCategories] = useState<Array<{ _id: string; name: string }>>([])
 
   // Fetch categories for filter
@@ -112,8 +112,8 @@ export default function AdminProductsPage() {
       params.set('page', (pageIndex + 1).toString())
       params.set('limit', pageSize.toString())
       if (search) params.set('search', search)
-      if (categoryFilter) params.set('category', categoryFilter)
-      if (statusFilter) params.set('status', statusFilter)
+      if (categoryFilter !== 'all') params.set('category', categoryFilter)
+      if (statusFilter !== 'all') params.set('status', statusFilter)
 
       // Sorting
       if (sorting.length > 0) {
@@ -307,6 +307,15 @@ export default function AdminProductsPage() {
       ),
     },
     {
+      accessorKey: 'soldCount',
+      header: 'Sold',
+      cell: ({ row }: any) => (
+        <span className="font-medium">
+          {row.original.soldCount ?? 0}
+        </span>
+      ),
+    },
+    {
       accessorKey: 'isActive',
       header: 'Status',
       cell: ({ row }: any) => (
@@ -355,6 +364,7 @@ export default function AdminProductsPage() {
   const table = useReactTable({
     data: products,
     columns,
+    getRowId: (row) => row._id,
     state: {
       sorting,
       columnFilters,
@@ -380,17 +390,13 @@ export default function AdminProductsPage() {
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,
+    rowCount: total,
   })
 
-  // Handle status filter change
+  // Reset to the first page whenever the query changes
   useEffect(() => {
-    const statusParam = statusFilter === 'all' ? '' : statusFilter
-    if (statusParam) {
-      // Add to columnFilters? Actually our API expects status query param. We'll incorporate into fetch directly via statusFilter state.
-    }
-    // Reset to first page on filter change
     setPageIndex(0)
-  }, [statusFilter, categoryFilter])
+  }, [search, statusFilter, categoryFilter, sorting, pageSize])
 
   return (
     <div className="space-y-6">
@@ -565,9 +571,11 @@ export default function AdminProductsPage() {
               <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No products found</h3>
               <p className="text-muted-foreground mb-4">
-                {search || statusFilter || categoryFilter ? 'Try adjusting your filters' : 'Add your first product'}
+                {search || statusFilter !== 'all' || categoryFilter !== 'all'
+                  ? 'Try adjusting your filters'
+                  : 'Add your first product'}
               </p>
-              {!search && !statusFilter && !categoryFilter && (
+              {!search && statusFilter === 'all' && categoryFilter === 'all' && (
                 <Button onClick={() => router.push('/admin/products/new')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Product
