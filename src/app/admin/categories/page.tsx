@@ -14,7 +14,7 @@ import {
 } from '@/store/slices/categoriesSlice'
 import { toast } from '@/hooks/use-toast'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import {
   Plus,
@@ -91,6 +91,10 @@ export default function AdminCategoriesPage() {
       imageUrl: null,
       imagePublicId: null,
     },
+  })
+  const imageUrl = useWatch({
+    control: form.control,
+    name: 'imageUrl',
   })
 
   useEffect(() => {
@@ -171,7 +175,6 @@ export default function AdminCategoriesPage() {
       const payload = {
         ...data,
         parent: data.parent || null,
-        image: data.imageUrl ? { url: data.imageUrl, publicId: data.imagePublicId } : undefined,
       }
 
       if (selectedCategoryId) {
@@ -516,10 +519,10 @@ export default function AdminCategoriesPage() {
               <div className="space-y-2">
                 <FormLabel>Category Image</FormLabel>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                  {form.getValues('imageUrl') ? (
+                  {imageUrl ? (
                     <div className="relative h-24 w-24 rounded-md overflow-hidden border">
                       <Image
-                        src={form.getValues('imageUrl')!}
+                        src={imageUrl}
                         alt="Category"
                         fill
                         className="object-cover"

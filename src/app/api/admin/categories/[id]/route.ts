@@ -78,6 +78,7 @@ export async function PUT(
 
     // Build update data
     const updateData: any = {}
+    const unsetData: Record<string, 1> = {}
 
     if (name !== undefined) {
       // Generate slug if name changed
@@ -127,11 +128,16 @@ export async function PUT(
         updateData.image = { url: imageUrl, publicId: imagePublicId }
       } else if (imageUrl === null || imagePublicId === null) {
         // Removing image
-        updateData.image = undefined
+        unsetData.image = 1
       }
     }
 
-    const category = await Category.findByIdAndUpdate(id, updateData, {
+    const updateOperation =
+      Object.keys(unsetData).length > 0
+        ? { $set: updateData, $unset: unsetData }
+        : updateData
+
+    const category = await Category.findByIdAndUpdate(id, updateOperation, {
       new: true,
       runValidators: true,
     }).populate('parent', 'name slug')
