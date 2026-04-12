@@ -1,7 +1,7 @@
 // src/app/(auth)/sign-in/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -29,6 +29,7 @@ export default function SignInPage() {
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const verified = searchParams.get('verified') === 'true'
   const error = searchParams.get('error')
+  const maintenance = searchParams.get('maintenance') === '1'
 
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -41,6 +42,18 @@ export default function SignInPage() {
       rememberMe: false,
     },
   })
+
+  useEffect(() => {
+    if (error !== 'maintenance_mode') {
+      return
+    }
+
+    toast({
+      title: 'Maintenance mode is active',
+      description: 'Only admin accounts can sign in while the storefront is under maintenance.',
+      variant: 'destructive',
+    })
+  }, [error])
 
   const onSubmit = async (data: SignInForm) => {
     setIsLoading(true)
@@ -57,6 +70,12 @@ export default function SignInPage() {
           toast({
             title: 'Too many attempts',
             description: 'Please wait before trying to sign in again.',
+            variant: 'destructive',
+          })
+        } else if (result.code === 'maintenance_mode') {
+          toast({
+            title: 'Maintenance mode is active',
+            description: 'Only admin accounts can sign in while maintenance is enabled.',
             variant: 'destructive',
           })
         } else if (result.code === 'unverified') {
@@ -135,6 +154,12 @@ export default function SignInPage() {
           </Link>
         </p>
       </div>
+
+      {maintenance && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Maintenance mode is currently enabled. Only admin accounts can sign in right now.
+        </div>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

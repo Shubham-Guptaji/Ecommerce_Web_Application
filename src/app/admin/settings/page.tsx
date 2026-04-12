@@ -40,6 +40,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [logoUploading, setLogoUploading] = useState(false)
+  const [maintenanceSaving, setMaintenanceSaving] = useState(false)
 
   const form = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
@@ -100,25 +101,30 @@ export default function AdminSettingsPage() {
     fetchSettings()
   }, [fetchSettings])
 
+  const saveSettings = async (data: SettingsForm) => {
+    const response = await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Failed to save settings')
+    }
+
+    return result
+  }
+
   const onSubmit = async (data: SettingsForm) => {
     setLoading(true)
     try {
-      const response = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      await saveSettings(data)
+      toast({
+        title: 'Success',
+        description: 'Settings saved successfully',
       })
-
-      const result = await response.json()
-
-      if (response.ok && result.success) {
-        toast({
-          title: 'Success',
-          description: 'Settings saved successfully',
-        })
-      } else {
-        throw new Error(result.message)
-      }
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -152,26 +158,16 @@ export default function AdminSettingsPage() {
         const logoPublicId = result.data.publicId
 
         // Update settings with new logo
-        const settingsResponse = await fetch('/api/admin/settings', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...form.getValues(),
-            storeLogo: { url: logoUrl, publicId: logoPublicId },
-          }),
+        await saveSettings({
+          ...form.getValues(),
+          storeLogo: { url: logoUrl, publicId: logoPublicId },
         })
 
-        const settingsResult = await settingsResponse.json()
-
-        if (settingsResponse.ok && settingsResult.success) {
-          toast({
-            title: 'Success',
-            description: 'Logo uploaded successfully',
-          })
-          fetchSettings() // Refresh to get updated logo
-        } else {
-          throw new Error(settingsResult.message || 'Failed to save logo')
-        }
+        toast({
+          title: 'Success',
+          description: 'Logo uploaded successfully',
+        })
+        fetchSettings() // Refresh to get updated logo
       } else {
         throw new Error(result.message)
       }
@@ -188,26 +184,16 @@ export default function AdminSettingsPage() {
 
   const handleRemoveLogo = async () => {
     try {
-      const response = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form.getValues(),
-          storeLogo: undefined,
-        }),
+      await saveSettings({
+        ...form.getValues(),
+        storeLogo: undefined,
       })
 
-      const result = await response.json()
-
-      if (response.ok && result.success) {
-        toast({
-          title: 'Success',
-          description: 'Logo removed',
-        })
-        fetchSettings()
-      } else {
-        throw new Error(result.message)
-      }
+      toast({
+        title: 'Success',
+        description: 'Logo removed',
+      })
+      fetchSettings()
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -273,6 +259,42 @@ export default function AdminSettingsPage() {
         description: 'Failed to export data',
         variant: 'destructive',
       })
+    }
+  }
+
+  const handleMaintenanceToggle = async (checked: boolean) => {
+    const previousValue = form.getValues('maintenanceMode')
+
+    form.setValue('maintenanceMode', checked, {
+      shouldDirty: true,
+      shouldTouch: true,
+    })
+    setMaintenanceSaving(true)
+
+    try {
+      await saveSettings({
+        ...form.getValues(),
+        maintenanceMode: checked,
+      })
+
+      toast({
+        title: checked ? 'Maintenance enabled' : 'Maintenance disabled',
+        description: checked
+          ? 'Visitors will now be redirected to the maintenance page.'
+          : 'Visitors can access the storefront again.',
+      })
+    } catch (error: any) {
+      form.setValue('maintenanceMode', previousValue, {
+        shouldDirty: true,
+        shouldTouch: true,
+      })
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update maintenance mode',
+        variant: 'destructive',
+      })
+    } finally {
+      setMaintenanceSaving(false)
     }
   }
 
@@ -543,10 +565,14 @@ export default function AdminSettingsPage() {
                     <div>
                       <p className="font-medium">Maintenance Mode</p>
                       <p className="text-sm text-muted-foreground">
-                        Temporarily disable the store for visitors
+                        Temporarily disable the store for visitors. Changes apply immediately.
                       </p>
                     </div>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch
+                      checked={field.value}
+                      disabled={maintenanceSaving}
+                      onCheckedChange={handleMaintenanceToggle}
+                    />
                   </div>
                 )}
               />

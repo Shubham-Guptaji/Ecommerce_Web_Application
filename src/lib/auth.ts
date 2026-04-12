@@ -7,6 +7,7 @@ import { compare } from 'bcryptjs'
 import { dbConnect } from '@/lib/db'
 import User from '@/models/User'
 import { checkRateLimit, getClientIp, loginRateLimiter } from '@/lib/ratelimit'
+import { isMaintenanceModeEnabled } from '@/lib/settings'
 
 class RateLimitSignInError extends CredentialsSignin {
   code = 'rate_limit'
@@ -14,6 +15,10 @@ class RateLimitSignInError extends CredentialsSignin {
 
 class UnverifiedEmailSignInError extends CredentialsSignin {
   code = 'unverified'
+}
+
+class MaintenanceModeSignInError extends CredentialsSignin {
+  code = 'maintenance_mode'
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -66,6 +71,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new UnverifiedEmailSignInError()
         }
 
+        if (await isMaintenanceModeEnabled() && user.role !== 'admin') {
+          throw new MaintenanceModeSignInError()
+        }
+
         return {
           _id: user._id.toString(),
           email: user.email,
@@ -82,6 +91,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
+    async signIn({ user }) {
+      if (!(await isMaintenanceModeEnabled())) {
+        return true
+      }
+
+      if (user.role === 'admin') {
+        return true
+      }
+
+      await dbConnect()
+
+      const dbUser = user.email
+        ? await User.findOne({ email: user.email }).select('role')
+        : null
+
+      if (dbUser?.role === 'admin') {
+        return true
+      }
+
+      return '/sign-in?error=maintenance_mode&maintenance=1'
+    },
     async jwt({ token, user }) {
       if (user) {
         token._id = user._id.toString()

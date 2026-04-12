@@ -2,7 +2,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,7 @@ export default function AdminLayout({
 }) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function AdminLayout({
   }, [session, status, router])
 
   const getIsActive = (href: string) => {
-    const path = window.location.pathname
+    const path = pathname || ''
     if (href === '/admin') return path === '/admin'
     return path.startsWith(href)
   }
@@ -172,11 +173,11 @@ export default function AdminLayout({
               <Link href="/admin" className="hover:text-primary transition-colors">
                 Dashboard
               </Link>
-              {window.location.pathname !== '/admin' && (
+              {pathname !== '/admin' && (
                 <>
                   <ChevronRight className="h-4 w-4" />
                   <span className="font-medium text-foreground">
-                    {navigation.find((n) => n.href === window.location.pathname)?.name || 'Admin'}
+                    {navigation.find((n) => n.href === pathname)?.name || 'Admin'}
                   </span>
                 </>
               )}
@@ -195,7 +196,7 @@ export default function AdminLayout({
                   </svg>
                 </Button>
                 <h1 className="text-xl font-bold">
-                  {navigation.find((n) => n.href === window.location.pathname)?.name || 'Admin'}
+                  {navigation.find((n) => n.href === pathname)?.name || 'Admin'}
                 </h1>
               </div>
 
