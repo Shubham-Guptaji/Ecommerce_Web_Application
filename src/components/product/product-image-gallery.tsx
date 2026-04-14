@@ -17,10 +17,11 @@ interface ProductImageGalleryProps {
 }
 
 export function ProductImageGallery({ images, productName }: ProductImageGalleryProps) {
+  const validImages = (images || []).filter((image) => typeof image?.url === 'string' && image.url.trim())
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [zoomOpen, setZoomOpen] = useState(false)
 
-  if (!images || images.length === 0) {
+  if (validImages.length === 0) {
     return (
       <div className="aspect-square relative bg-muted rounded-lg overflow-hidden flex items-center justify-center">
         <span className="text-muted-foreground">No Image</span>
@@ -28,7 +29,8 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
     )
   }
 
-  const currentImage = images[selectedIndex]
+  const safeSelectedIndex = Math.min(selectedIndex, validImages.length - 1)
+  const currentImage = validImages[safeSelectedIndex]
 
   const openZoom = (index: number) => {
     setSelectedIndex(index)
@@ -37,12 +39,12 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setSelectedIndex((prev) => (prev + 1) % images.length)
+    setSelectedIndex((prev) => (prev + 1) % validImages.length)
   }
 
   const prevImage = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setSelectedIndex((prev) => (prev - 1 + images.length) % images.length)
+    setSelectedIndex((prev) => (prev - 1 + validImages.length) % validImages.length)
   }
 
   return (
@@ -50,35 +52,35 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
       <div className="space-y-4">
         {/* Main Image with Zoom */}
         <div
-          className="aspect-square relative bg-muted rounded-lg overflow-hidden cursor-zoom-in"
-          onClick={() => openZoom(selectedIndex)}
+          className="aspect-square relative rounded-lg overflow-hidden cursor-zoom-in border bg-white"
+          onClick={() => openZoom(safeSelectedIndex)}
         >
           <Image
             src={currentImage.url}
             alt={productName}
             fill
-            className="object-cover transition-transform hover:scale-105 duration-300"
+            className="object-contain p-4 transition-transform hover:scale-[1.02] duration-300"
             priority
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </div>
 
         {/* Thumbnails */}
-        {images.length > 1 && (
+        {validImages.length > 1 && (
           <div className="flex gap-4 overflow-x-auto pb-2">
-            {images.map((img, index) => (
+            {validImages.map((img, index) => (
               <button
                 key={index}
                 onClick={() => setSelectedIndex(index)}
-                className={`relative h-20 w-20 shrink-0 rounded-md overflow-hidden border-2 transition-colors ${
-                  index === selectedIndex ? 'border-primary' : 'border-transparent hover:border-primary/50'
+                className={`relative h-20 w-20 shrink-0 rounded-md overflow-hidden border-2 bg-white transition-colors ${
+                  index === safeSelectedIndex ? 'border-primary' : 'border-transparent hover:border-primary/50'
                 }`}
               >
                 <Image
                   src={img.url}
                   alt={`${productName} ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-contain p-1.5"
                   sizes="80px"
                 />
               </button>
@@ -105,7 +107,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
             </Button>
 
             {/* Navigation buttons */}
-            {images.length > 1 && (
+            {validImages.length > 1 && (
               <>
                 <Button
                   variant="ghost"
@@ -129,8 +131,8 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
             {/* Zoomed Image */}
             <div className="relative w-full h-full flex items-center justify-center p-16">
               <Image
-                src={images[selectedIndex].url}
-                alt={`${productName} ${selectedIndex + 1}`}
+                src={validImages[safeSelectedIndex].url}
+                alt={`${productName} ${safeSelectedIndex + 1}`}
                 width={1200}
                 height={1200}
                 className="max-w-full max-h-full object-contain"
@@ -139,9 +141,9 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
             </div>
 
             {/* Image counter */}
-            {images.length > 1 && (
+            {validImages.length > 1 && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                {selectedIndex + 1} / {images.length}
+                {safeSelectedIndex + 1} / {validImages.length}
               </div>
             )}
           </div>
