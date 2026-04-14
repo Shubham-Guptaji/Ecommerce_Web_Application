@@ -32,10 +32,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid file type. Only JPEG, PNG, WEBP, GIF allowed' },
+        { success: false, message: 'Invalid file type. Only JPEG, PNG, WEBP, GIF, AVIF allowed' },
         { status: 400 }
       )
     }

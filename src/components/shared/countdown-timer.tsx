@@ -24,9 +24,16 @@ export function CountdownTimer({ targetDate, onExpire }: CountdownTimerProps) {
     }
   }, [targetDate, onExpire])
 
-  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft())
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  })
 
   useEffect(() => {
+    setTimeLeft(calculateTimeLeft())
+
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft())
     }, 1000)
@@ -39,22 +46,22 @@ export function CountdownTimer({ targetDate, onExpire }: CountdownTimerProps) {
   return (
     <div className="flex items-center gap-3 text-sm font-mono">
       <div className="bg-background border rounded px-2 py-1">
-        <span className="text-lg">{formatNumber(timeLeft.days)}</span>
+        <span className="text-lg text-black dark:text-white">{formatNumber(timeLeft.days)}</span>
         <span className="text-xs text-muted-foreground block">Days</span>
       </div>
       <span>:</span>
       <div className="bg-background border rounded px-2 py-1">
-        <span className="text-lg">{formatNumber(timeLeft.hours)}</span>
+        <span className="text-lg text-black dark:text-white">{formatNumber(timeLeft.hours)}</span>
         <span className="text-xs text-muted-foreground block">Hrs</span>
       </div>
       <span>:</span>
       <div className="bg-background border rounded px-2 py-1">
-        <span className="text-lg">{formatNumber(timeLeft.minutes)}</span>
+        <span className="text-lg text-black dark:text-white">{formatNumber(timeLeft.minutes)}</span>
         <span className="text-xs text-muted-foreground block">Mins</span>
       </div>
       <span>:</span>
       <div className="bg-background border rounded px-2 py-1">
-        <span className="text-lg">{formatNumber(timeLeft.seconds)}</span>
+        <span className="text-lg text-black dark:text-white">{formatNumber(timeLeft.seconds)}</span>
         <span className="text-xs text-muted-foreground block">Secs</span>
       </div>
     </div>

@@ -26,7 +26,7 @@ export async function uploadToCloudinary(
 }> {
   try {
     const folder = options.folder || process.env.CLOUDINARY_UPLOAD_FOLDER || 'ecommerce'
-    const allowedFormats = options.allowed_formats || ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    const allowedFormats = options.allowed_formats || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif']
     const maxSize = options.max_size || 5 * 1024 * 1024 // 5MB default
 
     // Convert Buffer to base64 if needed

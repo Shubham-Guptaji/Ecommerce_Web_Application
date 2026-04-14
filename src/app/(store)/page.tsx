@@ -349,7 +349,10 @@ export default async function HomePage() {
               <div>
                 <Badge variant="secondary" className="mb-2">Limited Time</Badge>
                 <h2 className="text-3xl font-bold">Flash Sale</h2>
-                <p className="mt-2">Ends in: <CountdownTimer targetDate={flashSaleEnds} /></p>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <p>Ends in:</p>
+                  <CountdownTimer targetDate={flashSaleEnds} />
+                </div>
               </div>
               <Button variant="outline" asChild className="mt-4 md:mt-0 bg-white/10 border-white text-white hover:bg-white/20">
                 <Link href="/products?sort=discount">

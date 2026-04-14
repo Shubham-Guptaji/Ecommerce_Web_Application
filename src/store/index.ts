@@ -9,7 +9,6 @@ import couponsReducer from './slices/couponsSlice'
 import wishlistReducer from './slices/wishlistSlice'
 import addressesReducer from './slices/addressSlice'
 import profileReducer from './slices/profileSlice'
-import { useAppDispatch, useAppSelector } from '../hooks/useRedux'
 
 export const store = configureStore({
   reducer: {
@@ -33,4 +32,3 @@ export const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
-export { useAppDispatch, useAppSelector }
