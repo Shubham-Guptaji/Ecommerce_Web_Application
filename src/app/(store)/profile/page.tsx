@@ -174,8 +174,10 @@ export default function ProfilePage() {
 
   // Compute stats from Redux orders (which may be from current filter, but we fetched all)
   // Use ordersFromRedux which will contain the fetched orders
-  const totalOrders = ordersFromRedux.length
-  const totalSpent = ordersFromRedux.reduce((sum, order) => sum + order.pricing.total, 0)
+  const spendStatuses = ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered']
+  const completedOrders = ordersFromRedux.filter((order) => spendStatuses.includes(order.status))
+  const totalOrders = completedOrders.length
+  const totalSpent = completedOrders.reduce((sum, order) => sum + order.pricing.total, 0)
 
   useEffect(() => {
     if (session?.user) {

@@ -11,11 +11,13 @@ import { toast } from '@/hooks/use-toast'
 import { Loader2, CreditCard, Lock, ShieldCheck } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { axiosInstance } from '@/lib/axios'
+import { useCartStore } from '@/store/cartStore'
 
 export default function PaymentPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { data: session } = useSession()
+  const { clearCart } = useCartStore()
 
   const [orderId, setOrderId] = useState<string>('')
   const [razorpayOrderId, setRazorpayOrderId] = useState<string>('')
@@ -98,6 +100,7 @@ export default function PaymentPage() {
             })
 
             if (verifyResponse.data.success) {
+              clearCart()
               toast({
                 title: 'Payment Successful',
                 description: 'Your order has been confirmed.',

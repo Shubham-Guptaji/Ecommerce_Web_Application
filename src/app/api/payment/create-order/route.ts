@@ -10,7 +10,6 @@ import Address from '@/models/Address'
 import Counter from '@/models/Counter'
 import { auth } from '@/lib/auth'
 import { requireCSRF } from '@/lib/csrf'
-import { v4 as uuidv4 } from 'uuid'
 import { env } from '@/lib/env'
 import { checkoutSchema } from '@/schemas'
 
@@ -18,6 +17,55 @@ const razorpay = new Razorpay({
   key_id: env.RAZORPAY_KEY_ID,
   key_secret: env.RAZORPAY_KEY_SECRET,
 })
+
+function normalizeText(value?: string | null) {
+  return value?.trim() || ''
+}
+
+function areOrderItemsEqual(orderItems: any[], checkoutItems: any[]) {
+  if (orderItems.length !== checkoutItems.length) return false
+
+  return orderItems.every((orderItem, index) => {
+    const checkoutItem = checkoutItems[index]
+    return (
+      orderItem.product?.toString() === checkoutItem.product?.toString() &&
+      orderItem.quantity === checkoutItem.quantity &&
+      orderItem.price === checkoutItem.price &&
+      (orderItem.discountedPrice || 0) === (checkoutItem.discountedPrice || 0) &&
+      orderItem.subtotal === checkoutItem.subtotal
+    )
+  })
+}
+
+function isMatchingPendingOrder(order: any, payload: {
+  items: any[]
+  shippingAddress: any
+  pricing: any
+  notes?: string
+  couponId?: string | null
+}) {
+  return (
+    order.status === 'pending' &&
+    order.paymentInfo?.method === 'razorpay' &&
+    order.paymentInfo?.status === 'pending' &&
+    areOrderItemsEqual(order.items || [], payload.items) &&
+    order.shippingAddress?.fullName === payload.shippingAddress.fullName &&
+    order.shippingAddress?.phone === payload.shippingAddress.phone &&
+    order.shippingAddress?.line1 === payload.shippingAddress.line1 &&
+    normalizeText(order.shippingAddress?.line2) === normalizeText(payload.shippingAddress.line2) &&
+    order.shippingAddress?.city === payload.shippingAddress.city &&
+    order.shippingAddress?.state === payload.shippingAddress.state &&
+    order.shippingAddress?.pincode === payload.shippingAddress.pincode &&
+    order.shippingAddress?.country === payload.shippingAddress.country &&
+    (order.pricing?.subtotal || 0) === payload.pricing.subtotal &&
+    (order.pricing?.couponDiscount || 0) === payload.pricing.couponDiscount &&
+    (order.pricing?.deliveryCharge || 0) === payload.pricing.deliveryCharge &&
+    (order.pricing?.tax || 0) === payload.pricing.tax &&
+    (order.pricing?.total || 0) === payload.pricing.total &&
+    normalizeText(order.notes) === normalizeText(payload.notes) &&
+    (order.coupon?.toString?.() || order.coupon?.toString?.() || '') === (payload.couponId || '')
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -136,6 +184,96 @@ export async function POST(request: NextRequest) {
     // Total
     const total = taxableAmount + deliveryCharge + tax
 
+    const orderItems = cart.items.map((item: any) => ({
+      product: item.product._id,
+      name: item.product.name,
+      image: item.product.images?.[0]?.url,
+      price: item.product.price,
+      discountedPrice: item.product.discountedPrice,
+      quantity: item.quantity,
+      subtotal: (item.product.discountedPrice || item.product.price) * item.quantity,
+    }))
+
+    const shippingAddress = {
+      fullName: address.fullName,
+      phone: address.phone,
+      line1: address.line1,
+      line2: address.line2 || '',
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+      country: address.country,
+    }
+
+    const pricing = {
+      subtotal,
+      discount: 0,
+      couponDiscount,
+      deliveryCharge,
+      tax,
+      total,
+    }
+
+    const existingPendingOrders = await Order.find({
+      user: session.user.id,
+      status: 'pending',
+      'paymentInfo.method': 'razorpay',
+      'paymentInfo.status': 'pending',
+    }).sort({ createdAt: -1 })
+
+    const matchingPendingOrder = existingPendingOrders.find((existingOrder: any) =>
+      isMatchingPendingOrder(existingOrder, {
+        items: orderItems,
+        shippingAddress,
+        pricing,
+        notes,
+        couponId: couponId?.toString() || '',
+      })
+    )
+
+    if (matchingPendingOrder?.paymentInfo?.razorpayOrderId) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          orderId: matchingPendingOrder._id,
+          razorpayOrderId: matchingPendingOrder.paymentInfo.razorpayOrderId,
+          amount: matchingPendingOrder.pricing.total,
+          currency: 'INR',
+          key: env.RAZORPAY_KEY_ID,
+          name: 'E-Shop',
+          description: `Order ${matchingPendingOrder.orderNumber}`,
+          prefill: {
+            name: session.user.name || '',
+            email: session.user.email || '',
+            phone: '',
+          },
+        },
+      })
+    }
+
+    const stalePendingOrderIds = existingPendingOrders
+      .filter((existingOrder: any) => existingOrder._id.toString() !== matchingPendingOrder?._id?.toString())
+      .map((existingOrder: any) => existingOrder._id)
+
+    if (stalePendingOrderIds.length > 0) {
+      await Order.updateMany(
+        { _id: { $in: stalePendingOrderIds } },
+        {
+          $set: {
+            status: 'cancelled',
+            'paymentInfo.status': 'failed',
+          },
+          $push: {
+            statusHistory: {
+              status: 'cancelled',
+              timestamp: new Date(),
+              note: 'Cancelled automatically because a newer checkout attempt was started',
+            },
+          },
+        }
+      )
+    }
+
     // Generate order number
     let orderNumber: string
     try {
@@ -156,38 +294,14 @@ export async function POST(request: NextRequest) {
     const order = new Order({
       orderNumber,
       user: session.user.id,
-      items: cart.items.map((item: any) => ({
-        product: item.product._id,
-        name: item.product.name,
-        image: item.product.images?.[0]?.url,
-        price: item.product.price,
-        discountedPrice: item.product.discountedPrice,
-        quantity: item.quantity,
-        subtotal: (item.product.discountedPrice || item.product.price) * item.quantity,
-      })),
-      shippingAddress: {
-        fullName: address.fullName,
-        phone: address.phone,
-        line1: address.line1,
-        line2: address.line2 || '',
-        city: address.city,
-        state: address.state,
-        pincode: address.pincode,
-        country: address.country,
-      },
+      items: orderItems,
+      shippingAddress,
       status: 'pending',
       paymentInfo: {
         method: 'razorpay',
         status: 'pending',
       },
-      pricing: {
-        subtotal,
-        discount: 0,
-        couponDiscount,
-        deliveryCharge,
-        tax,
-        total,
-      },
+      pricing,
       coupon: couponId,
       notes,
       expectedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now

@@ -1,16 +1,19 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, RefreshCw, Mail, Phone } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { axiosInstance } from '@/lib/axios'
 
 export default function PaymentFailedPage() {
   const params = useParams()
+  const router = useRouter()
   const orderId = params.id as string
+  const [retrying, setRetrying] = useState(false)
 
   useEffect(() => {
     toast({
@@ -20,10 +23,34 @@ export default function PaymentFailedPage() {
     })
   }, [])
 
-  const handleRetry = () => {
-    // Redirect to checkout with the same order context
-    // In a full implementation, we might create a new order or retry the existing pending order
-    window.location.href = `/checkout?retry=${orderId}`
+  const handleRetry = async () => {
+    try {
+      setRetrying(true)
+      const response = await axiosInstance.post(`/api/payment/retry/${orderId}`)
+      const { orderId: retryOrderId, razorpayOrderId, amount, currency, key, name, description, prefill } = response.data.data
+
+      const params = new URLSearchParams({
+        orderId: retryOrderId,
+        razorpayOrderId,
+        amount: amount.toString(),
+        currency,
+        key,
+        name,
+        description,
+        email: prefill?.email || '',
+        phone: prefill?.phone || '',
+      })
+
+      router.push(`/payment?${params.toString()}`)
+    } catch (error: any) {
+      toast({
+        title: 'Retry unavailable',
+        description: error.response?.data?.message || 'Unable to restart payment for this order.',
+        variant: 'destructive',
+      })
+    } finally {
+      setRetrying(false)
+    }
   }
 
   return (
@@ -68,9 +95,9 @@ export default function PaymentFailedPage() {
         </Card>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-          <Button size="lg" onClick={handleRetry} className="gap-2">
+          <Button size="lg" onClick={handleRetry} className="gap-2" disabled={retrying}>
             <RefreshCw className="h-5 w-5" />
-            Try Payment Again
+            {retrying ? 'Loading Payment...' : 'Try Payment Again'}
           </Button>
           <Button size="lg" variant="outline" asChild className="gap-2">
             <Link href="/orders">

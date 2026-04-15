@@ -19,6 +19,7 @@ import { toast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils'
 import InvoiceDownload from '@/components/shared/InvoiceDownload'
+import { axiosInstance } from '@/lib/axios'
 import {
   ArrowLeft,
   Package,
@@ -54,6 +55,7 @@ export default function OrderDetailPage() {
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [refundReason, setRefundReason] = useState('')
   const [submittingRefund, setSubmittingRefund] = useState(false)
+  const [retryingPayment, setRetryingPayment] = useState(false)
 
   useEffect(() => {
     if (orderId) {
@@ -118,6 +120,36 @@ export default function OrderDetailPage() {
       })
     } finally {
       setSubmittingRefund(false)
+    }
+  }
+
+  const handleRetryPayment = async () => {
+    try {
+      setRetryingPayment(true)
+      const response = await axiosInstance.post(`/api/payment/retry/${orderId}`)
+      const { orderId: retryOrderId, razorpayOrderId, amount, currency, key, name, description, prefill } = response.data.data
+
+      const params = new URLSearchParams({
+        orderId: retryOrderId,
+        razorpayOrderId,
+        amount: amount.toString(),
+        currency,
+        key,
+        name,
+        description,
+        email: prefill?.email || '',
+        phone: prefill?.phone || '',
+      })
+
+      router.push(`/payment?${params.toString()}`)
+    } catch (error: any) {
+      toast({
+        title: 'Retry unavailable',
+        description: error.response?.data?.message || 'Unable to restart payment for this order.',
+        variant: 'destructive',
+      })
+    } finally {
+      setRetryingPayment(false)
     }
   }
 
@@ -436,6 +468,19 @@ export default function OrderDetailPage() {
               </div>
 
               <div className="pt-4 space-y-2">
+                {orderData.status === 'pending' &&
+                  orderData.paymentInfo.method === 'razorpay' &&
+                  orderData.paymentInfo.status === 'pending' && (
+                    <Button
+                      className="w-full gap-2"
+                      onClick={handleRetryPayment}
+                      disabled={retryingPayment}
+                    >
+                      <Package className="h-4 w-4" />
+                      {retryingPayment ? 'Loading Payment...' : 'Pay Now'}
+                    </Button>
+                  )}
+
                 {(orderData.status === 'pending' || orderData.status === 'confirmed') && (
                   <Button
                     variant="destructive"

@@ -71,13 +71,16 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        const pendingOrders = orders.filter((order: any) => order.paymentInfo.status !== 'paid')
+        const pendingOrders = orders.filter(
+          (order: any) => order.status === 'pending' && order.paymentInfo.status === 'pending'
+        )
 
         for (const order of pendingOrders) {
           const claimedOrder = await Order.findOneAndUpdate(
             {
               _id: order._id,
-              'paymentInfo.status': { $ne: 'paid' },
+              status: 'pending',
+              'paymentInfo.status': 'pending',
             },
             {
               $set: {
