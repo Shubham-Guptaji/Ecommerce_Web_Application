@@ -1,5 +1,6 @@
 import { createClient } from 'redis'
 import { env } from './env'
+import { logger } from './logger'
 
 type AppRedisClient = ReturnType<typeof createClient>
 
@@ -58,7 +59,7 @@ export async function getRedisClient() {
   const url = buildRedisUrl()
   if (!url) {
     if (!cache.configWarningShown) {
-      console.warn('Redis is not configured. Set REDIS_URL or REDIS_HOST to enable Redis-backed rate limiting.')
+      logger.warn('Redis is not configured. Set REDIS_URL or REDIS_HOST to enable Redis-backed rate limiting.')
       cache.configWarningShown = true
     }
     return null
@@ -68,7 +69,7 @@ export async function getRedisClient() {
     const client = createClient({ url })
 
     client.on('error', (error) => {
-      console.error('Redis client error:', error)
+      logger.error('Redis client error', error)
     })
 
     cache.connectPromise = client.connect().then(() => {

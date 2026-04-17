@@ -16,7 +16,6 @@ export function NewsletterForm() {
     e.preventDefault()
 
     if (!email.trim()) {
-      console.warn('NewsletterForm: Email is empty')
       toast({
         title: 'Error',
         description: 'Please enter your email address',
@@ -25,15 +24,12 @@ export function NewsletterForm() {
       return
     }
 
-    console.log('NewsletterForm: Submitting email:', email.trim())
     setSubmitting(true)
 
     try {
       const response = await axiosInstance.post('/api/newsletter/subscribe', {
         email: email.trim(),
       })
-
-      console.log('NewsletterForm: Response:', response.data)
 
       if (response.data.success) {
         const emailStatus = response.data.emailSent
@@ -49,7 +45,6 @@ export function NewsletterForm() {
         // Clear inline message after 7 seconds
         setTimeout(() => setMessage(null), 7000)
       } else {
-        console.warn('NewsletterForm: API returned failure:', response.data)
         const errorMsg = response.data.message || 'Failed to subscribe'
         toast({
           title: 'Error',
@@ -61,11 +56,8 @@ export function NewsletterForm() {
         setTimeout(() => setMessage(null), 5000)
       }
     } catch (error: any) {
-      console.error('NewsletterForm: Caught error:', error)
       let errorMessage = 'Failed to subscribe. Please try again.'
       if (error.response) {
-        console.log('NewsletterForm: Error response status:', error.response.status)
-        console.log('NewsletterForm: Error response data:', error.response.data)
         // Handle specific status codes
         if (error.response.status === 409) {
           errorMessage = 'This email is already subscribed to our newsletter.'
@@ -74,7 +66,6 @@ export function NewsletterForm() {
         }
       } else if (error.request) {
         // No response received
-        console.warn('NewsletterForm: No response from server')
         errorMessage = 'Cannot connect to server. Please check your internet connection.'
       }
       toast({

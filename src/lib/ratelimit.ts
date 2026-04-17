@@ -1,5 +1,6 @@
 // src/lib/ratelimit.ts
 import { env } from './env'
+import { logger } from './logger'
 import { getRedisClient } from './redis'
 
 type RateLimitResult = {
@@ -51,15 +52,13 @@ class RedisRateLimiter {
     }
 
     // Temporary debug log for local verification. Safe to delete after checking requests.
-    if (env.NODE_ENV !== 'production') {
-      console.log('[rate-limit]', {
-        key: redisKey,
-        count,
-        maxRequests: this.maxRequests,
-        limited: result.limited,
-        remaining: result.remaining,
-      })
-    }
+    logger.debug('Rate limit check', {
+      key: redisKey,
+      count,
+      maxRequests: this.maxRequests,
+      limited: result.limited,
+      remaining: result.remaining,
+    })
 
     return result
   }

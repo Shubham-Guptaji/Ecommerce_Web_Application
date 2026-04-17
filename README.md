@@ -301,6 +301,7 @@ ecom/
 │   │   ├── editor/
 │   │   ├── layout/
 │   │   ├── product/
+│   │   ├── providers.tsx
 │   │   ├── providers/
 │   │   ├── shared/
 │   │   └── ui/
@@ -341,24 +342,30 @@ const response = await fetch(
 )
 
 const data = await response.json()
-console.log(data.data)
+return data.data
 ```
 
 ### Add Item to Cart
 
 ```typescript
-import { useDispatch } from 'react-redux'
+import { useAppDispatch } from '@/hooks/useRedux'
 import { addItem } from '@/store/slices/cartSlice'
 
-function ProductPage({ product }: { product: { _id: string; price: number } }) {
-  const dispatch = useDispatch()
+function ProductPage({
+  product,
+}: {
+  product: { _id: string; name: string; price: number; image?: string }
+}) {
+  const dispatch = useAppDispatch()
 
   const handleAddToCart = () => {
     dispatch(
       addItem({
-        productId: product._id,
-        quantity: 1,
+        product: product._id,
+        name: product.name,
+        image: product.image,
         price: product.price,
+        quantity: 1,
       })
     )
   }

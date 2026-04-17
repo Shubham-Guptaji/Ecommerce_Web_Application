@@ -151,7 +151,7 @@ export default function PaymentPage() {
     }
 
     document.body.appendChild(script)
-  }, [keyId, amount, currency, name, description, razorpayOrderId, prefill, orderId, router])
+  }, [keyId, amount, currency, name, description, razorpayOrderId, prefill, orderId, router, clearCart])
 
   if (loading) {
     return (

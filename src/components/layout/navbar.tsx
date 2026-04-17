@@ -18,7 +18,7 @@ import {
   FolderTree,
   ChevronRight,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useCartStore } from '@/store/cartStore'
 import { useWishlist } from '@/hooks/useWishlist'
 import { ModeToggle } from '@/components/mode-toggle'
@@ -50,14 +50,14 @@ export function Navbar() {
   const { items: wishlistItems } = useWishlist()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [isHydrated, setIsHydrated] = useState(false)
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   const cartItemCount = getItemCount()
   const wishlistCount = wishlistItems.length
-
-  useEffect(() => {
-    setIsHydrated(true)
-  }, [])
 
   const navItems: NavItem[] = [
     { href: '/', label: 'Home', icon: Home },

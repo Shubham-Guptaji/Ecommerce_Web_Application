@@ -37,6 +37,17 @@ const CategoryChart = dynamic(
   { ssr: false }
 )
 
+function formatRevenueChartDate(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) return ''
+
+  const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value
+  const parsedDate = new Date(normalizedValue)
+
+  if (Number.isNaN(parsedDate.getTime())) return value
+
+  return parsedDate.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })
+}
+
 export default function AdminDashboard() {
   const { data: overviewData, isLoading: overviewLoading, error: overviewError } = useQuery({
     queryKey: ['admin', 'analytics', 'overview'],
@@ -122,8 +133,8 @@ export default function AdminDashboard() {
       value: overview.lowStockProductsCount || 0,
     },
     revenueChart: revenue.map((item: any) => ({
-      date: new Date(item._id).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
-      revenue: item.revenue,
+      date: formatRevenueChartDate(item.date ?? item._id),
+      revenue: item.revenue || 0,
     })),
     topProducts: (productsAnalytics.topProducts || []).map((item: any) => ({
       name: item.name,

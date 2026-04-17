@@ -9,7 +9,14 @@ import { auth } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { sendOrderConfirmationEmail } from '@/lib/emails'
 import { decrementInventory } from '@/lib/inventory'
+import { logger } from '@/lib/logger'
 import { paymentVerifySchema } from '@/schemas'
+
+function toHexBuffer(signature: string) {
+  return /^[0-9a-f]+$/i.test(signature) && signature.length % 2 === 0
+    ? Buffer.from(signature, 'hex')
+    : null
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +34,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = paymentVerifySchema.parse(body)
 
-    console.log('Payment verification:', {
+    logger.debug('Payment verification request', {
       razorpayOrderId,
       razorpayPaymentId,
       userId: session.user.id,
@@ -39,16 +46,21 @@ export async function POST(request: NextRequest) {
       .update(`${razorpayOrderId}|${razorpayPaymentId}`)
       .digest('hex')
 
-    console.log('Signature verification:', {
-      generatedSignature,
-      receivedSignature: razorpaySignature,
-      match: generatedSignature === razorpaySignature,
+    const generatedBuffer = toHexBuffer(generatedSignature)
+    const receivedBuffer = toHexBuffer(razorpaySignature)
+    const isSignatureValid =
+      generatedBuffer !== null &&
+      receivedBuffer !== null &&
+      generatedBuffer.length === receivedBuffer.length &&
+      crypto.timingSafeEqual(generatedBuffer, receivedBuffer)
+
+    logger.debug('Payment signature verification result', {
+      razorpayOrderId,
+      userId: session.user.id,
+      isSignatureValid,
     })
 
-    const signatureBuffers = [generatedSignature, razorpaySignature].map((sig) =>
-      Buffer.from(sig, 'hex')
-    )
-    if (!crypto.timingSafeEqual(signatureBuffers[0], signatureBuffers[1])) {
+    if (!isSignatureValid) {
       return NextResponse.json(
         { success: false, message: 'Invalid payment signature' },
         { status: 400 }
@@ -65,8 +77,11 @@ export async function POST(request: NextRequest) {
       .populate('coupon')
       .populate('user', 'name email')
 
-    console.log('Orders found by razorpayOrderId:', orders.map((order: any) => order._id))
-    console.log('Session user ID:', session.user.id)
+    logger.debug('Orders found for Razorpay order', {
+      razorpayOrderId,
+      orderIds: orders.map((order: any) => order._id),
+      userId: session.user.id,
+    })
 
     if (orders.length === 0) {
       return NextResponse.json(
@@ -82,7 +97,11 @@ export async function POST(request: NextRequest) {
 
     if (unauthorizedOrder) {
       const orderUserId = unauthorizedOrder.user?._id || unauthorizedOrder.user
-      console.log('User mismatch:', { orderUserId, sessionUserId: session.user.id })
+      logger.warn('Payment verification user mismatch', {
+        orderUserId,
+        sessionUserId: session.user.id,
+        razorpayOrderId,
+      })
       return NextResponse.json(
         { success: false, message: 'Unauthorized: Order does not belong to this user' },
         { status: 403 }
@@ -158,7 +177,7 @@ export async function POST(request: NextRequest) {
           sendOrderConfirmationEmail(claimedOrder, order.user)
         }
       } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError)
+        logger.error('Failed to send confirmation email', emailError)
       }
     }
 
@@ -175,7 +194,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Payment verification error:', error)
+    logger.error('Payment verification error', error)
     return NextResponse.json(
       { success: false, message: 'Payment verification failed' },
       { status: 500 }

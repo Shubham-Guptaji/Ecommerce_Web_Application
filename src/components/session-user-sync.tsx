@@ -9,12 +9,9 @@ import { useAppDispatch } from '@/hooks/useRedux'
 export function SessionUserSync() {
   const { data: session, status } = useSession()
   const dispatch = useAppDispatch()
-const { setUserId, items } = useCartStore()
-const hasFetchedRef = useRef(false)
+  const { setUserId, items } = useCartStore()
+  const hasFetchedRef = useRef(false)
 
-   
-   
-   
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
       const currentUserId = session.user.id

@@ -4,7 +4,6 @@
 import { useSelector } from 'react-redux'
 import { useCallback } from 'react'
 import type { CartItem } from '@/types'
-import type { RootState } from './index'
 import { useAppDispatch } from '@/hooks/useRedux'
 import {
   addItem,
@@ -23,8 +22,6 @@ import {
   selectCartItems,
   selectCartIsOpen,
   selectCartUserId,
-  selectCartSubtotal,
-  selectCartItemCount,
   selectCartCouponCode,
   selectCartCouponDiscount,
 } from './slices/cartSlice'

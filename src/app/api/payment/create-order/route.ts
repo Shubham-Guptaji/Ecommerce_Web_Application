@@ -11,6 +11,7 @@ import Counter from '@/models/Counter'
 import { auth } from '@/lib/auth'
 import { requireCSRF } from '@/lib/csrf'
 import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 import { checkoutSchema } from '@/schemas'
 
 const razorpay = new Razorpay({
@@ -313,7 +314,7 @@ export async function POST(request: NextRequest) {
     })
 
     await order.save()
-    console.log('Order created:', { orderId: order._id, orderNumber })
+    logger.info('Pending order created', { orderId: order._id, orderNumber })
 
     // Create Razorpay order
     const razorpayOrder = await razorpay.orders.create({
@@ -326,12 +327,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('Razorpay order created:', { razorpayOrderId: razorpayOrder.id, orderId: order._id })
+    logger.info('Razorpay order created', { razorpayOrderId: razorpayOrder.id, orderId: order._id })
 
     // Update order with razorpay order ID
     order.paymentInfo.razorpayOrderId = razorpayOrder.id
     await order.save()
-    console.log('Order updated with razorpayOrderId:', { orderId: order._id, razorpayOrderId: razorpayOrder.id })
+    logger.debug('Order updated with Razorpay order id', {
+      orderId: order._id,
+      razorpayOrderId: razorpayOrder.id,
+    })
 
     return NextResponse.json({
       success: true,
@@ -351,7 +355,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Create payment order error:', error)
+    logger.error('Create payment order error', error)
     return NextResponse.json(
       { success: false, message: 'Failed to create payment order' },
       { status: 500 }

@@ -4,10 +4,10 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react'
+import { Facebook, Instagram, Twitter } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { useState } from 'react'
-import axiosInstance from '@/lib/axios'
+import { axiosInstance } from '@/lib/axios'
 
 export function Footer() {
   const [email, setEmail] = useState('')
@@ -21,7 +21,6 @@ export function Footer() {
       return
     }
 
-    console.log('Footer newsletter: Submitting', email.trim())
     setIsSubscribing(true)
     setMessage(null)
     try {
@@ -38,7 +37,6 @@ export function Footer() {
       setEmail('')
       setTimeout(() => setMessage(null), 7000)
     } catch (error: any) {
-      console.error('Footer newsletter error:', error)
       let errorMsg = 'Failed to subscribe. Please try again.'
       if (error.response?.status === 409) {
         errorMsg = 'This email is already subscribed to our newsletter.'

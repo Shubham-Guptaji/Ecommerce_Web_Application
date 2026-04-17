@@ -7,6 +7,13 @@ import Cart from '@/models/Cart'
 import Coupon from '@/models/Coupon'
 import { env } from '@/lib/env'
 import { decrementInventory } from '@/lib/inventory'
+import { logger } from '@/lib/logger'
+
+function toHexBuffer(signature: string) {
+  return /^[0-9a-f]+$/i.test(signature) && signature.length % 2 === 0
+    ? Buffer.from(signature, 'hex')
+    : null
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,10 +38,16 @@ export async function POST(request: NextRequest) {
       .digest('hex')
 
     // Use timingSafeEqual to avoid timing attacks
-    const sigBuffer = Buffer.from(signature, 'hex')
-    const expectedBuffer = Buffer.from(expectedSignature, 'hex')
-    if (!crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
-      console.error('Invalid webhook signature')
+    const sigBuffer = toHexBuffer(signature)
+    const expectedBuffer = toHexBuffer(expectedSignature)
+    const isSignatureValid =
+      sigBuffer !== null &&
+      expectedBuffer !== null &&
+      sigBuffer.length === expectedBuffer.length &&
+      crypto.timingSafeEqual(sigBuffer, expectedBuffer)
+
+    if (!isSignatureValid) {
+      logger.warn('Invalid Razorpay webhook signature')
       // Always return 200 to acknowledge receipt (Razorpay retries on non-200)
       return NextResponse.json(
         { success: false, message: 'Invalid signature' },
@@ -47,7 +60,7 @@ export async function POST(request: NextRequest) {
     const payload = JSON.parse(bodyString)
     const event = payload.event
 
-    console.log(`Webhook received: ${event}`)
+    logger.info('Razorpay webhook received', { event })
 
     switch (event) {
       case 'payment.captured':
@@ -63,7 +76,7 @@ export async function POST(request: NextRequest) {
           .sort({ createdAt: -1 })
 
         if (orders.length === 0) {
-          console.error(`Order not found for razorpayOrderId: ${orderId}`)
+          logger.warn('Order not found for Razorpay webhook', { razorpayOrderId: orderId })
           // Always return 200 even if order not found, to avoid Razorpay retries
           return NextResponse.json(
             { success: false, message: 'Order not found' },
@@ -174,12 +187,12 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled webhook event: ${event}`)
+        logger.debug('Unhandled Razorpay webhook event', { event })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Webhook error:', error)
+    logger.error('Webhook error', error)
     return NextResponse.json(
       { success: false, message: 'Webhook processing failed' },
       { status: 500 }

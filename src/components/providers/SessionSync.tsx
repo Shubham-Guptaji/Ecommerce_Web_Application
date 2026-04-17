@@ -3,7 +3,6 @@
 
 import { useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useDispatch } from 'react-redux'
 import { setUser, clearAuth } from '@/store/slices/authSlice'
 import { useAppDispatch } from '@/hooks/useRedux'
 

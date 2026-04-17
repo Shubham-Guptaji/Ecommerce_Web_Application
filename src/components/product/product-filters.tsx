@@ -21,12 +21,25 @@ interface ProductFiltersProps {
   categories: CategoryNode[]
 }
 
+const DEFAULT_MIN_PRICE = 0
+const DEFAULT_MAX_PRICE = 100000
+
+type PriceInputState = {
+  min: string
+  max: string
+}
+
 export function ProductFilters({ categories }: ProductFiltersProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const searchParamsKey = searchParams.toString()
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    DEFAULT_MIN_PRICE,
+    DEFAULT_MAX_PRICE,
+  ])
+  const [priceInputs, setPriceInputs] = useState<PriceInputState>({ min: '', max: '' })
   const [minRating, setMinRating] = useState<number>(0)
   const [inStock, setInStock] = useState<boolean>(false)
 
@@ -34,20 +47,25 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
    
    
   useEffect(() => {
-    const cats = searchParams.get('category')?.split(',').filter(Boolean) || []
-    const minP = searchParams.get('minPrice') ? parseInt(searchParams.get('minPrice')!) : 0
-    const maxP = searchParams.get('maxPrice') ? parseInt(searchParams.get('maxPrice')!) : 100000
-    const rating = searchParams.get('minRating') ? parseInt(searchParams.get('minRating')!) : 0
-    const stock = searchParams.get('inStock') === 'true'
+    const params = new URLSearchParams(searchParamsKey)
+    const cats = params.get('category')?.split(',').filter(Boolean) || []
+    const minPriceParam = params.get('minPrice')
+    const maxPriceParam = params.get('maxPrice')
+    const minP = minPriceParam ? parseInt(minPriceParam) : DEFAULT_MIN_PRICE
+    const maxP = maxPriceParam ? parseInt(maxPriceParam) : DEFAULT_MAX_PRICE
+    const minRatingParam = params.get('minRating')
+    const rating = minRatingParam ? parseInt(minRatingParam) : 0
+    const stock = params.get('inStock') === 'true'
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedCategories(cats)
-     
     setPriceRange([minP, maxP])
-     
+    setPriceInputs({
+      min: minPriceParam ?? '',
+      max: maxPriceParam ?? '',
+    })
     setMinRating(rating)
-     
     setInStock(stock)
-  }, [searchParams])
+  }, [searchParamsKey])
 
   const updateURL = (updates: Record<string, string | boolean | null>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -63,7 +81,14 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
     // Reset to page 1 when filters change
     params.delete('page')
 
-    router.push(`?${params.toString()}`, { scroll: false })
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+
+    if (nextQuery === currentQuery) {
+      return
+    }
+
+    router.push(nextQuery ? `?${nextQuery}` : '?', { scroll: false })
   }
 
   const handleCategoryChange = (slug: string, checked: boolean) => {
@@ -74,16 +99,53 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
 
   const handlePriceChange = (values: number[]) => {
     if (values.length === 2) {
-      setPriceRange([values[0], values[1]])
-      updateURL({ minPrice: values[0].toString(), maxPrice: values[1].toString() })
+      const nextRange: [number, number] = [values[0], values[1]]
+      setPriceRange(nextRange)
+      setPriceInputs({
+        min: values[0] === DEFAULT_MIN_PRICE ? '' : values[0].toString(),
+        max: values[1] === DEFAULT_MAX_PRICE ? '' : values[1].toString(),
+      })
     }
   }
 
-  const handlePriceInputChange = (type: 'min' | 'max', value: number) => {
-    const newRange: [number, number] = type === 'min' ? [value, priceRange[1]] : [priceRange[0], value]
-    setPriceRange(newRange)
-    updateURL({ [type === 'min' ? 'minPrice' : 'maxPrice']: value.toString() })
+  const handlePriceInputChange = (type: 'min' | 'max', value: string) => {
+    if (value !== '' && !/^\d+$/.test(value)) {
+      return
+    }
+
+    setPriceInputs((current) => ({
+      ...current,
+      [type]: value,
+    }))
   }
+
+  const applyPriceInputs = () => {
+    const rawMin = priceInputs.min.trim()
+    const rawMax = priceInputs.max.trim()
+
+    const parsedMin = rawMin ? Number.parseInt(rawMin, 10) : DEFAULT_MIN_PRICE
+    const parsedMax = rawMax ? Number.parseInt(rawMax, 10) : DEFAULT_MAX_PRICE
+
+    const safeMin = Number.isNaN(parsedMin) ? DEFAULT_MIN_PRICE : parsedMin
+    const safeMax = Number.isNaN(parsedMax) ? DEFAULT_MAX_PRICE : parsedMax
+
+    const clampedMin = Math.min(Math.max(safeMin, DEFAULT_MIN_PRICE), DEFAULT_MAX_PRICE)
+    const clampedMax = Math.max(Math.min(safeMax, DEFAULT_MAX_PRICE), clampedMin)
+
+    setPriceRange([clampedMin, clampedMax])
+    setPriceInputs({
+      min: rawMin ? clampedMin.toString() : '',
+      max: rawMax ? clampedMax.toString() : '',
+    })
+    updateURL({
+      minPrice: rawMin ? clampedMin.toString() : null,
+      maxPrice: rawMax ? clampedMax.toString() : null,
+    })
+  }
+
+  const hasPendingPriceChanges =
+    priceInputs.min !== (searchParams.get('minPrice') ?? '') ||
+    priceInputs.max !== (searchParams.get('maxPrice') ?? '')
 
   const handleRatingChange = (rating: number) => {
     const newRating = minRating === rating ? 0 : rating
@@ -98,7 +160,8 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
 
   const handleClearFilters = () => {
     setSelectedCategories([])
-    setPriceRange([0, 100000])
+    setPriceRange([DEFAULT_MIN_PRICE, DEFAULT_MAX_PRICE])
+    setPriceInputs({ min: '', max: '' })
     setMinRating(0)
     setInStock(false)
     const params = new URLSearchParams(searchParams.toString())
@@ -108,8 +171,8 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
-    priceRange[0] > 0 ||
-    priceRange[1] < 100000 ||
+    priceRange[0] > DEFAULT_MIN_PRICE ||
+    priceRange[1] < DEFAULT_MAX_PRICE ||
     minRating > 0 ||
     inStock
 
@@ -146,19 +209,27 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
             <input
               type="number"
               placeholder="Min"
-              value={priceRange[0] || ''}
-              onChange={(e) => handlePriceInputChange('min', parseInt(e.target.value) || 0)}
+              value={priceInputs.min}
+              onChange={(e) => handlePriceInputChange('min', e.target.value)}
               className="min-w-0 w-full border rounded px-3 py-2 text-sm"
             />
             <span className="text-muted-foreground">-</span>
             <input
               type="number"
               placeholder="Max"
-              value={priceRange[1] || ''}
-              onChange={(e) => handlePriceInputChange('max', parseInt(e.target.value) || 100000)}
+              value={priceInputs.max}
+              onChange={(e) => handlePriceInputChange('max', e.target.value)}
               className="min-w-0 w-full border rounded px-3 py-2 text-sm"
             />
           </div>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={applyPriceInputs}
+            disabled={!hasPendingPriceChanges}
+          >
+            Apply Price Range
+          </Button>
         </div>
       </div>
 

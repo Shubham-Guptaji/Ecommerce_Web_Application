@@ -1,5 +1,6 @@
 // File path: src/components/shared/EmptyState.tsx
 import React from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -41,7 +42,7 @@ export function EmptyState({
           <Button onClick={action.onClick}>{action.label}</Button>
         ) : (
           <Button asChild>
-            <a href={action.href}>{action.label}</a>
+            <Link href={action.href}>{action.label}</Link>
           </Button>
         )
       )}

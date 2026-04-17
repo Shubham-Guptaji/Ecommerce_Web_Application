@@ -2,7 +2,6 @@
 'use client'
 
 import { useCallback } from 'react'
-import { useSelector } from 'react-redux'
 import {
   addItem as addItemAction,
   removeItem as removeItemAction,

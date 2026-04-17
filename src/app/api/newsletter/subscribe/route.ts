@@ -5,6 +5,7 @@ import NewsletterSubscriber from '@/models/NewsletterSubscriber'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 import { sendNewsletterWelcomeEmail } from '@/lib/emails'
+import { logger } from '@/lib/logger'
 import { buildNewsletterUnsubscribeLink } from '@/lib/newsletter'
 import { checkRateLimit, getClientIp, newsletterSubscribeRateLimiter } from '@/lib/ratelimit'
 
@@ -78,9 +79,9 @@ export async function POST(request: NextRequest) {
       const unsubscribeLink = buildNewsletterUnsubscribeLink(emailLower, subscriber.unsubscribeToken)
       await sendNewsletterWelcomeEmail(emailLower, unsubscribeLink)
       emailSent = true
-      console.log(`Newsletter welcome email sent successfully to ${emailLower}`)
+      logger.info('Newsletter welcome email sent', { email: emailLower })
     } catch (emailError) {
-      console.error('Failed to send newsletter welcome email:', emailError)
+      logger.error('Failed to send newsletter welcome email', emailError)
       // Don't fail the request if email fails, but we'll note it in the response
     }
 
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       emailSent,
     })
   } catch (error: any) {
-    console.error('Newsletter subscribe error:', error)
+    logger.error('Newsletter subscribe error', error)
 
     if (error.errors) {
       return NextResponse.json(

@@ -1,7 +1,23 @@
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 
-export default auth((req: any) => {
+type AuthenticatedRequest = NextRequest & {
+  auth: {
+    user?: {
+      role?: string
+    }
+  } | null
+}
+
+function buildSignInRedirect(request: AuthenticatedRequest) {
+  const callbackUrl = `${request.nextUrl.pathname}${request.nextUrl.search}`
+  return NextResponse.redirect(
+    new URL(`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
+  )
+}
+
+export default auth((req: AuthenticatedRequest) => {
   const path = req.nextUrl.pathname
 
   if (path === '/sign-in' || path === '/sign-up') {
@@ -13,7 +29,7 @@ export default auth((req: any) => {
 
   if (path.startsWith('/admin')) {
     if (!req.auth) {
-      return NextResponse.redirect(new URL('/sign-in?callbackUrl=' + encodeURIComponent(path), req.url))
+      return buildSignInRedirect(req)
     }
 
     if (req.auth.user?.role !== 'admin') {
@@ -28,7 +44,7 @@ export default auth((req: any) => {
 
   if (isProtected) {
     if (!req.auth) {
-      return NextResponse.redirect(new URL('/sign-in?callbackUrl=' + encodeURIComponent(path), req.url))
+      return buildSignInRedirect(req)
     }
     return NextResponse.next()
   }

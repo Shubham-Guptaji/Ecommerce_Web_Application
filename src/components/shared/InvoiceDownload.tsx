@@ -7,10 +7,6 @@ import { toast } from '@/hooks/use-toast'
 import { Download } from 'lucide-react'
 import type { IOrder } from '@/models/Order'
 
-// Dynamically imported to avoid SSR issues
-const PDFDownloadLinkDynamic = typeof window !== 'undefined' ?
-  require('@react-pdf/renderer').PDFDownloadLink : null
-
 interface InvoiceDownloadProps {
   order: IOrder
   storeName?: string
@@ -70,8 +66,7 @@ export default function InvoiceDownload({
 
       // Set the component to trigger download
       setLinkComponent(() => AutoDownloadLink)
-    } catch (error) {
-      console.error('Invoice download error:', error)
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to generate invoice',

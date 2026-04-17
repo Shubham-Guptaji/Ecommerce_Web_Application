@@ -1,6 +1,7 @@
 // File path: src/lib/nodemailer.ts
 import nodemailer from 'nodemailer'
 import { env } from './env'
+import { logger } from './logger'
 
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
@@ -16,9 +17,9 @@ const transporter = nodemailer.createTransport({
 // Verify connection in development
 if (env.NODE_ENV !== 'production') {
   transporter.verify().then(() => {
-    console.log('✅ Email service connected successfully')
+    logger.info('Email service connected successfully')
   }).catch((error) => {
-    console.error('❌ Email service connection failed:', error)
+    logger.error('Email service connection failed', error)
   })
 }
 

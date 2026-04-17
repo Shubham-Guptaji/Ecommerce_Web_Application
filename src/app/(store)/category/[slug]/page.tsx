@@ -16,8 +16,8 @@ import Category from '@/models/Category'
 import Product from '@/models/Product'
 
 interface PageProps {
-  params: { slug: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

@@ -1,45 +1,59 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
 interface CountdownTimerProps {
   targetDate: Date | string
   onExpire?: () => void
 }
 
+function getTimeLeft(targetTimestamp: number, currentTime: number) {
+  const difference = targetTimestamp - currentTime
+
+  if (difference <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true }
+  }
+
+  return {
+    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((difference / (1000 * 60)) % 60),
+    seconds: Math.floor((difference / 1000) % 60),
+    expired: false,
+  }
+}
+
+const INITIAL_TIME_LEFT = {
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+  expired: false,
+}
+
 export function CountdownTimer({ targetDate, onExpire }: CountdownTimerProps) {
-  const calculateTimeLeft = useCallback(() => {
-    const difference = new Date(targetDate).getTime() - new Date().getTime()
-
-    if (difference <= 0) {
-      onExpire?.()
-      return { days: 0, hours: 0, minutes: 0, seconds: 0 }
-    }
-
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((difference / (1000 * 60)) % 60),
-      seconds: Math.floor((difference / 1000) % 60),
-    }
-  }, [targetDate, onExpire])
-
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  })
+  const [now, setNow] = useState<number | null>(null)
+  const targetTimestamp = new Date(targetDate).getTime()
+  const timeLeft = now === null ? INITIAL_TIME_LEFT : getTimeLeft(targetTimestamp, now)
 
   useEffect(() => {
-    setTimeLeft(calculateTimeLeft())
+    const updateNow = () => setNow(Date.now())
+    updateNow()
+
+    if (timeLeft.expired) return
 
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft())
+      updateNow()
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [calculateTimeLeft])
+  }, [timeLeft.expired])
+
+  useEffect(() => {
+    if (now !== null && timeLeft.expired) {
+      onExpire?.()
+    }
+  }, [now, timeLeft.expired, onExpire])
 
   const formatNumber = (num: number) => num.toString().padStart(2, '0')
 

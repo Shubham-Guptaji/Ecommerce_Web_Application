@@ -5,6 +5,7 @@ import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import { compare } from 'bcryptjs'
 import { dbConnect } from '@/lib/db'
+import { logger } from '@/lib/logger'
 import User from '@/models/User'
 import { checkRateLimit, getClientIp, loginRateLimiter } from '@/lib/ratelimit'
 import { isMaintenanceModeEnabled } from '@/lib/settings'
@@ -250,7 +251,7 @@ const nextAuthConfig = NextAuth({
           await User.findByIdAndUpdate(user.id, { lastLogin: new Date() })
         }
       } catch (error) {
-        console.error('Failed to update lastLogin:', error)
+        logger.error('Failed to update lastLogin', error)
       }
     },
   },
