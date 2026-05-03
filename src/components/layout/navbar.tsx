@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
 type NavItem = {
@@ -251,7 +251,8 @@ export function Navbar() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[92vw] max-w-sm border-l bg-background p-0">
+<SheetContent side="right" className="w-[92vw] max-w-sm border-l bg-background p-0">
+                <SheetTitle className="sr-only">Menu</SheetTitle>
                 <div className="flex h-full flex-col">
                   <div className="border-b bg-muted/40 px-5 pb-5 pt-10">
                     <div className="mb-4 flex items-start justify-between gap-3">

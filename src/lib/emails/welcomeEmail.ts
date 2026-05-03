@@ -1,5 +1,9 @@
 // File path: src/lib/emails/welcomeEmail.ts
+import { getSiteUrl } from '@/lib/site-url'
+
 export default function welcomeEmailTemplate(name: string): string {
+  const loginUrl = `${getSiteUrl()}/sign-in`
+
   return `
 <!DOCTYPE html>
 <html>
@@ -18,7 +22,7 @@ export default function welcomeEmailTemplate(name: string): string {
     </div>
     <p>Hello ${name},</p>
     <p>Your email has been successfully verified! You can now log in and start shopping.</p>
-    <p><a href="${process.env.NEXTAUTH_URL}/sign-in" class="button">Log In</a></p>
+    <p><a href="${loginUrl}" class="button">Log In</a></p>
     <div class="footer">
       <p>© ${new Date().getFullYear()} E-Shop. All rights reserved.</p>
     </div>

@@ -26,6 +26,42 @@ class InactiveAccountSignInError extends CredentialsSignin {
   code = 'inactive'
 }
 
+type SessionDbUser = {
+  _id: { toString(): string }
+  role?: 'user' | 'admin'
+  isEmailVerified?: boolean
+  isActive?: boolean
+}
+
+const isMongoObjectId = (value: unknown): value is string =>
+  typeof value === 'string' && /^[0-9a-fA-F]{24}$/.test(value)
+
+async function resolveSessionUserByEmail(email: unknown) {
+  if (typeof email !== 'string') {
+    return null
+  }
+
+  const normalizedEmail = email.trim().toLowerCase()
+  if (!normalizedEmail) {
+    return null
+  }
+
+  await dbConnect()
+  const dbUser = await User.findOne({ email: normalizedEmail })
+    .select('_id role isEmailVerified isActive')
+    .lean() as SessionDbUser | null
+
+  if (!dbUser || dbUser.isActive === false) {
+    return null
+  }
+
+  return {
+    id: dbUser._id.toString(),
+    role: dbUser.role,
+    isEmailVerified: dbUser.isEmailVerified,
+  }
+}
+
 const nextAuthConfig = NextAuth({
   providers: [
     Google({
@@ -197,7 +233,7 @@ const nextAuthConfig = NextAuth({
       }
 
       const tokenUserId = token._id?.toString?.() || token.sub?.toString?.()
-      if (tokenUserId && /^[0-9a-fA-F]{24}$/.test(tokenUserId)) {
+      if (isMongoObjectId(tokenUserId)) {
         await dbConnect()
         const dbUser = await User.findById(tokenUserId)
           .select('role isEmailVerified isActive')
@@ -208,6 +244,19 @@ const nextAuthConfig = NextAuth({
           return token
         }
 
+        token.deactivated = false
+        if (dbUser.role) token.role = dbUser.role
+        if (dbUser.isEmailVerified !== undefined) token.isEmailVerified = dbUser.isEmailVerified
+      } else {
+        const dbUser = await resolveSessionUserByEmail(token.email)
+
+        if (!dbUser) {
+          token.deactivated = true
+          return token
+        }
+
+        token._id = dbUser.id
+        token.sub = dbUser.id
         token.deactivated = false
         if (dbUser.role) token.role = dbUser.role
         if (dbUser.isEmailVerified !== undefined) token.isEmailVerified = dbUser.isEmailVerified
@@ -222,13 +271,26 @@ const nextAuthConfig = NextAuth({
         role?: 'user' | 'admin'
         isEmailVerified?: boolean
         deactivated?: boolean
-      } | null | undefined
+      }
 
       if (customToken?.deactivated) {
         return null as any
       }
 
-      const sessionUserId = customToken?._id || token.sub
+      let sessionUserId = customToken?._id || token.sub
+
+      if (!isMongoObjectId(sessionUserId)) {
+        const dbUser = await resolveSessionUserByEmail(session.user?.email)
+
+        if (!dbUser) {
+          return null as any
+        }
+
+        sessionUserId = dbUser.id
+        customToken._id = dbUser.id
+        customToken.role = dbUser.role
+        customToken.isEmailVerified = dbUser.isEmailVerified
+      }
 
       if (session.user && sessionUserId) {
         session.user.id = sessionUserId
@@ -266,7 +328,21 @@ export const auth = (async (...args: any[]) => {
   const session = await (rawAuth as any)(...args)
   const sessionUser = (session as any)?.user
 
-  if (!sessionUser?.id || !/^[0-9a-fA-F]{24}$/.test(sessionUser.id)) {
+  if (!sessionUser?.id || !isMongoObjectId(sessionUser.id)) {
+    const dbUser = await resolveSessionUserByEmail(sessionUser?.email)
+
+    if (!dbUser) {
+      return null
+    }
+
+    sessionUser.id = dbUser.id
+    if (dbUser.role) {
+      sessionUser.role = dbUser.role
+    }
+    if (dbUser.isEmailVerified !== undefined) {
+      sessionUser.isEmailVerified = dbUser.isEmailVerified
+    }
+
     return session
   }
 

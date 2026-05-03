@@ -15,6 +15,7 @@ import { ProductActions } from '@/components/product/product-actions'
 import { ProductImageGallery } from '@/components/product/product-image-gallery'
 import { ProductReviewsClient } from '@/components/product/product-reviews-client'
 import { formatCurrency, toPlainObject } from '@/lib/utils'
+import { getApiBaseUrl } from '@/lib/site-url'
 
 
 
@@ -40,7 +41,8 @@ interface PageProps {
 
 async function getProduct(slug: string) {
   try {
-    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/products/by-slug/${slug}`, {
+    const apiBaseUrl = getApiBaseUrl()
+    const res = await fetch(`${apiBaseUrl}/api/products/by-slug/${slug}`, {
       cache: 'no-store',
     })
 

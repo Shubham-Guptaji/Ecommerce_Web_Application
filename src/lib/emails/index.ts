@@ -8,6 +8,7 @@ import orderConfirmationEmailTemplate from './orderConfirmationEmail'
 import orderStatusEmailTemplate from './orderStatusEmail'
 import newsletterWelcomeEmailTemplate from './newsletterWelcomeEmail'
 import type { IOrder } from '@/models/Order'
+import { getSiteUrl } from '@/lib/site-url'
 
 type OrderStatusEmailOrder = Pick<IOrder, 'orderNumber' | 'status' | 'trackingNumber' | 'courierName'>
 
@@ -15,7 +16,7 @@ type OrderStatusEmailOrder = Pick<IOrder, 'orderNumber' | 'status' | 'trackingNu
  * Send email verification to a user
  */
 export function sendVerificationEmail(user: { name: string; email: string }, rawToken: string): void {
-  const verifyUrl = `${process.env.NEXTAUTH_URL}/verify-email/${rawToken}`
+  const verifyUrl = `${getSiteUrl()}/verify-email/${rawToken}`
   const html = verificationEmailTemplate(user.name, verifyUrl)
 
   sendEmail(user.email, 'Verify your email address', html).catch((err) =>
@@ -38,7 +39,7 @@ export function sendWelcomeEmail(user: { name: string; email: string }): void {
  * Send password reset email
  */
 export function sendPasswordResetEmail(user: { name: string; email: string }, rawToken: string): void {
-  const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password/${rawToken}`
+  const resetUrl = `${getSiteUrl()}/reset-password/${rawToken}`
   const html = passwordResetEmailTemplate(user.name, resetUrl)
 
   sendEmail(user.email, 'Reset your password', html).catch((err) =>

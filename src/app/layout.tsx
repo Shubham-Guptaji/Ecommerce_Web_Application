@@ -2,9 +2,12 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { auth } from '@/lib/auth'
+import { getSiteUrl } from '@/lib/site-url'
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
+  metadataBase: new URL(siteUrl),
   title: {
     default: 'E-Shop — Best Products Online',
     template: '%s | E-Shop',
@@ -15,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    url: siteUrl,
     title: 'E-Shop — Best Products Online',
     description: 'Shop the best products at unbeatable prices.',
     siteName: 'E-Shop',

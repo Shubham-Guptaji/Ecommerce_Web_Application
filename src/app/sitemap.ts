@@ -2,10 +2,11 @@ import type { MetadataRoute } from 'next'
 import { dbConnect } from '@/lib/db'
 import Product from '@/models/Product'
 import Category from '@/models/Category'
+import { getSiteUrl } from '@/lib/site-url'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await dbConnect()
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const baseUrl = getSiteUrl()
 
   // Fetch all active products
   const products = await Product.find({ isActive: true }).select('slug updatedAt')

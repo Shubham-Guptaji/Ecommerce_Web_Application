@@ -1,5 +1,9 @@
 // File path: src/lib/emails/passwordChangedEmail.ts
+import { getSiteUrl } from '@/lib/site-url'
+
 export default function passwordChangedEmailTemplate(name: string): string {
+  const loginUrl = `${getSiteUrl()}/sign-in`
+
   return `
 <!DOCTYPE html>
 <html>
@@ -23,7 +27,7 @@ export default function passwordChangedEmailTemplate(name: string): string {
       <p><strong>⚠️ Security Alert:</strong></p>
       <p>If you did not change your password, please contact support immediately or reset your password again.</p>
     </div>
-    <p>You can <a href="${process.env.NEXTAUTH_URL}/sign-in">log in here</a> with your new password.</p>
+    <p>You can <a href="${loginUrl}">log in here</a> with your new password.</p>
     <div class="footer">
       <p>© ${new Date().getFullYear()} E-Shop. All rights reserved.</p>
     </div>
