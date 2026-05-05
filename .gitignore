@@ -45,7 +45,8 @@ Thumbs.db
 *.swo
 
 # Misc
-.superpowers/
+.superpowers
+docs/
 *.log
 *.pid
 *.seed
