@@ -9,6 +9,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cartStore'
 import { toast } from '@/hooks/use-toast'
+import { getPrimaryProductImage } from '@/lib/product-image'
 
 export default function WishlistPage() {
   const { items, removeItem, clearWishlist, loadWishlist } = useWishlist()
@@ -22,11 +23,13 @@ export default function WishlistPage() {
   }, [loadWishlist])
 
   const handleAddToCart = (product: any) => {
+    const image = getPrimaryProductImage(product)
+
     // Add to cart
     addToCart({
       product: product._id,
       name: product.name,
-      image: product.image?.url || null,
+      image: image || undefined,
       price: product.discountedPrice ?? product.price ?? 0,
       quantity: 1,
     })
@@ -89,16 +92,19 @@ export default function WishlistPage() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {items.map((item) => (
-          <div
-            key={item._id}
-            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-          >
+        {items.map((item) => {
+          const image = getPrimaryProductImage(item)
+
+          return (
+            <div
+              key={item._id}
+              className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
             <Link href={`/products/${item.slug}`} className="block">
               <div className="relative aspect-square mb-4 bg-muted rounded-md overflow-hidden">
-                {item.image ? (
+                {image ? (
                   <Image
-                    src={item.image}
+                    src={image}
                     alt={item.name}
                     fill
                     className="object-cover"
@@ -150,8 +156,9 @@ export default function WishlistPage() {
             >
               {item.stock === 0 ? 'Out of Stock' : 'Add to Cart & Remove'}
             </Button>
-          </div>
-        ))}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const sortOptions = [
   { value: 'featured', label: 'Featured' },
@@ -89,15 +90,25 @@ export function SortDropdown({ className }: SortDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className={className}>
+        <Button
+          variant="outline"
+          className={cn(
+            'rounded-full border-slate-300/80 bg-white/85 font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-slate-900/80 dark:text-white dark:hover:bg-slate-800',
+            className
+          )}
+        >
           Sort by: {getCurrentOptionLabel()}
           <ChevronDown className="ml-2 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent
+        align="end"
+        className="rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-slate-950/95"
+      >
         {sortOptions.map((option) => (
           <DropdownMenuItem
             key={option.value}
+            className="rounded-xl px-3 py-2 font-medium text-slate-700 focus:bg-slate-100 focus:text-slate-950 dark:text-slate-200 dark:focus:bg-slate-800 dark:focus:text-white"
             onClick={() => handleSort(option.value)}
           >
             {option.label}

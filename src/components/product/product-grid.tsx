@@ -2,13 +2,25 @@
 
 import { ProductCard } from './product-card'
 import type { IProduct } from '@/models/Product'
+import { cn } from '@/lib/utils'
 
 interface ProductGridProps {
   products: Array<IProduct | any>
   columns?: 2 | 3 | 4
+  className?: string
+  itemClassName?: string
+  variant?: 'default' | 'editorial'
+  stagger?: boolean
 }
 
-export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
+export function ProductGrid({
+  products,
+  columns = 4,
+  className,
+  itemClassName,
+  variant = 'default',
+  stagger = false,
+}: ProductGridProps) {
   const gridCols = {
     2: 'grid-cols-1 sm:grid-cols-2',
     3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
@@ -24,9 +36,15 @@ export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
   }
 
   return (
-    <div className={`grid ${gridCols[columns]} gap-6`}>
-      {products.map((product) => (
-        <ProductCard key={product._id.toString()} product={product} />
+    <div className={cn('grid gap-6', gridCols[columns], className)}>
+      {products.map((product, index) => (
+        <div
+          key={product._id.toString()}
+          className={itemClassName}
+          style={stagger ? { animationDelay: `${index * 90}ms` } : undefined}
+        >
+          <ProductCard product={product} variant={variant} />
+        </div>
       ))}
     </div>
   )
