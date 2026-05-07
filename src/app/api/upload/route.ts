@@ -9,6 +9,38 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 })
 
+const USER_UPLOAD_FOLDERS = new Set(['avatars'])
+const ADMIN_UPLOAD_FOLDERS = new Set(['products', 'categories', 'store'])
+
+function normalizeUploadFolder(value: FormDataEntryValue | null) {
+  const folder = typeof value === 'string' && value.trim()
+    ? value.trim()
+    : CLOUDINARY_UPLOAD_FOLDER
+
+  if (!/^[a-z0-9/_-]+$/i.test(folder) || folder.includes('..')) {
+    return null
+  }
+
+  return folder.replace(/^\/+|\/+$/g, '')
+}
+
+function getTopLevelFolder(publicId: string) {
+  return publicId.split('/').filter(Boolean)[0] || ''
+}
+
+function isAdminUploadFolder(folder: string) {
+  return ADMIN_UPLOAD_FOLDERS.has(folder)
+}
+
+function canUseUploadFolder(folder: string, role?: string) {
+  return USER_UPLOAD_FOLDERS.has(folder) || (role === 'admin' && isAdminUploadFolder(folder))
+}
+
+function canDeleteUploadedAsset(publicId: string, role?: string) {
+  const folder = getTopLevelFolder(publicId)
+  return role === 'admin' && (USER_UPLOAD_FOLDERS.has(folder) || isAdminUploadFolder(folder))
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
@@ -22,12 +54,19 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const folder = formData.get('folder') as string || CLOUDINARY_UPLOAD_FOLDER
+    const folder = normalizeUploadFolder(formData.get('folder'))
 
     if (!file) {
       return NextResponse.json(
         { success: false, message: 'No file provided' },
         { status: 400 }
+      )
+    }
+
+    if (!folder || !canUseUploadFolder(folder, session.user.role)) {
+      return NextResponse.json(
+        { success: false, message: 'Upload folder is not allowed' },
+        { status: 403 }
       )
     }
 
@@ -123,6 +162,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: 'Public ID is required' },
         { status: 400 }
+      )
+    }
+
+    if (!canDeleteUploadedAsset(publicId, session.user.role)) {
+      return NextResponse.json(
+        { success: false, message: 'You are not allowed to delete this asset' },
+        { status: 403 }
       )
     }
 

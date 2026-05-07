@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db'
 import Order, { type IOrder } from '@/models/Order'
-import { sendOrderStatusEmail } from '@/lib/emails'
+import { checkRateLimit, getClientIp, trackOrderRateLimiter } from '@/lib/ratelimit'
 
 type TrackOrderUser = {
   name: string
@@ -10,6 +10,12 @@ type TrackOrderUser = {
 
 type TrackOrderResult = Omit<IOrder, 'user'> & {
   user: TrackOrderUser
+}
+
+const formatResetTime = (resetTime: number) => {
+  if (!resetTime) return 'Please try again later.'
+  const minutes = Math.max(1, Math.ceil((resetTime - Date.now()) / 60000))
+  return `Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`
 }
 
 export async function POST(request: NextRequest) {
@@ -21,6 +27,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: 'Order number and email are required' },
         { status: 400 }
+      )
+    }
+
+    const rateLimitKey = `${getClientIp(request)}:${email.toLowerCase().trim()}`
+    const { limited, resetTime } = await checkRateLimit(trackOrderRateLimiter, rateLimitKey)
+
+    if (limited) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Too many tracking attempts. ${formatResetTime(resetTime)}`,
+        },
+        { status: 429 }
       )
     }
 
@@ -51,16 +70,6 @@ export async function POST(request: NextRequest) {
     const user = {
       name: order.user.name,
       email: userEmail,
-    }
-
-    // Send tracking email notification
-    try {
-      if (user.email) {
-        sendOrderStatusEmail(order, { name: user.name, email: user.email })
-      }
-    } catch (emailError) {
-      console.error('Failed to send tracking email:', emailError)
-      // Don't fail the request if email fails
     }
 
     // Return tracking data (exclude sensitive information)

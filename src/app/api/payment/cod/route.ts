@@ -11,6 +11,8 @@ import Counter from '@/models/Counter'
 import { auth } from '@/lib/auth'
 import { sendOrderConfirmationEmail } from '@/lib/emails'
 import { decrementInventory } from '@/lib/inventory'
+import { requireCSRF } from '@/lib/csrf'
+import { checkoutSchema } from '@/schemas'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,22 +25,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const csrf = await requireCSRF(request)
+    if (!csrf.valid) {
+      return csrf.response
+    }
+
     await dbConnect()
 
     const body = await request.json()
-    const { addressId, deliveryMethod, couponCode, notes } = body
-
-    // Validation
-    if (!addressId) {
-      return NextResponse.json(
-        { success: false, message: 'Delivery address is required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate COD limit: total <= 5000
-    // We'll calculate after getting cart to ensure total is within limit
-    // But for now, we'll validate after calculations
+    const { addressId, deliveryMethod, couponCode, notes } = checkoutSchema.parse(body)
 
     // Fetch address
     const address = await Address.findById(addressId)
